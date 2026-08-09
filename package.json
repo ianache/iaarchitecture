@@ -5,7 +5,8 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc -b",
-    "start:api": "node scripts/start-api.mjs"
+    "start:api": "node scripts/start-api.mjs",
+    "start:web": "pnpm --filter @architecture-ai/web dev"
   },
   "devDependencies": {
     "@types/node": "^22.13.4",
@@ -17,6 +18,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0"
+    "@types/react-dom": "^19.0.0",
+    "vite": "^6.1.0"
   }
 }

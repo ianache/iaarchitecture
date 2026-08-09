@@ -1,0 +1,2 @@
+import type { AnalysisResult } from "@architecture-ai/domain";
+export function PackageOverview({ result, onTraceability }: { result: AnalysisResult; onTraceability: () => void }) { return <section><h2>Architecture Package</h2><p>Status: {result.packageStatus.value}</p><p>Knowledge revision: {result.context.revision}</p><p>Findings: {result.findings.length}; Risks: {result.risks.length}</p><button onClick={onTraceability}>View traceability</button></section>; }

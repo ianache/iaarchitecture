@@ -1,4 +1,4 @@
 {
   "files": [],
-  "references": [{ "path": "packages/domain" }, { "path": "packages/knowledge" }, { "path": "packages/retrieval" }, { "path": "packages/orchestrator" }, { "path": "packages/artifacts" }, { "path": "packages/governance" }, { "path": "apps/api" }, { "path": "apps/cli" }]
+  "references": [{ "path": "packages/domain" }, { "path": "packages/knowledge" }, { "path": "packages/retrieval" }, { "path": "packages/orchestrator" }, { "path": "packages/artifacts" }, { "path": "packages/governance" }, { "path": "apps/api" }, { "path": "apps/cli" }, { "path": "apps/web" }]
 }

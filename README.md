@@ -1,94 +1,66 @@
 # Architecture AI MVP
 
-Architecture AI turns a PRD or user stories into an evidence-constrained, traceable Architecture Package. Git Markdown/OKF and the ontology are the System of Record; graph and vector retrieval are derived projections.
+Architecture AI convierte un PRD o historias de usuario en un Architecture Package trazable y restringido por evidencia. `knowledge/` y `ontology/` son el System of Record; SQLite solo guarda el estado operativo.
 
-## 1. Requisitos
+## Requisitos e instalación
 
 - Node.js 22+
 - pnpm 9+
-
-## 2. Instalación y compilación
-
-Desde la raíz del repositorio:
 
 ```powershell
 pnpm install
 pnpm typecheck
 ```
 
-El corpus corporativo está en `knowledge/` y la ontología mínima en `ontology/`. Las solicitudes de análisis deben incluir una revisión Git válida.
+## API
 
-## 3. Iniciar la API
-
-La API se ejecuta en `http://127.0.0.1:3000`:
+En una terminal:
 
 ```powershell
-pnpm typecheck
 pnpm start:api
 ```
 
-La terminal queda ocupada mientras el servidor está activo. Para detenerlo, presiona `Ctrl+C`.
+La API queda en `http://127.0.0.1:3000` y persiste en `.architecture-ai/architecture-ai.sqlite`.
 
-Endpoints principales:
+Endpoints: `POST /analyses`, `GET /analyses/:id`, `GET /packages/:id`, `GET /packages/:id/traceability`, `GET /packages/:id/decisions` y `POST /decisions/:id/{review|approve|reject|request-changes}`.
 
-```text
-POST /analyses
-GET  /analyses/:id
-GET  /packages/:id
-GET  /packages/:id/traceability
-GET  /packages/:id/decisions
-```
+## CLI
 
-Ejemplo:
-
-```powershell
-$body = @{ requirements = "Customers submit orders and publish fulfillment events"; knowledgeRevision = (git rev-parse HEAD).Trim() } | ConvertTo-Json
-Invoke-RestMethod http://127.0.0.1:3000/analyses -Method Post -ContentType "application/json" -Body $body
-```
-
-## 4. Ejecutar la CLI
-
-Compilar la CLI:
+Con la API ejecutándose:
 
 ```powershell
 pnpm --filter @architecture-ai/cli build
-```
-
-Mostrar ayuda:
-
-```powershell
-node apps/cli/dist/main.js --help
-```
-
-Comandos disponibles:
-
-```powershell
 node apps/cli/dist/main.js analyze --requirements "Customers submit orders" --revision HEAD
 node apps/cli/dist/main.js package ANALYSIS-1
+node apps/cli/dist/main.js review DEC-1 --action review
 node apps/cli/dist/main.js review DEC-1 --action approve
 ```
 
-Estado actual: la CLI valida y muestra la solicitud en JSON; todavía no invoca automáticamente la API.
+La CLI usa exactamente la misma API que la web. Use `ARCHITECTURE_AI_API` para cambiar la URL.
 
-## 5. Aplicación web
+## Aplicación web
 
-Los componentes React están en `apps/web/`. Actualmente no existe un servidor Vite ni un `index.html`, por lo que la interfaz todavía no se puede abrir como aplicación web independiente.
+Con la API ejecutándose en otra terminal:
 
-Sí se puede validar su compilación:
+```powershell
+pnpm --filter @architecture-ai/web dev
+```
+
+Abra la URL indicada por Vite, normalmente `http://localhost:5173`. La interfaz permite enviar requisitos, revisar decisiones y consultar trazabilidad.
+
+Para generar el bundle:
 
 ```powershell
 pnpm --filter @architecture-ai/web build
 ```
 
-La interfaz web requiere posteriormente añadir el entrypoint Vite y el comando `start:web`.
+## Revisión y pruebas
 
-## 6. Pruebas
+Una decisión significativa debe seguir `DRAFT -> REVIEWED -> APPROVED`; aprobar directamente un borrador devuelve `INVALID_REVIEW_TRANSITION`.
 
 ```powershell
-node_modules\.bin\vitest.cmd run --run --exclude ".worktrees/**"
+node_modules\.bin\vitest.cmd run
 pnpm typecheck
 ```
 
-El paquete generado contiene los documentos numerados, ADRs, diagramas Mermaid y `architecture-context.json`.
-
-Las sugerencias basadas únicamente en conocimiento del modelo se clasifican como recomendaciones que requieren revisión; nunca se convierten silenciosamente en conocimiento corporativo aprobado.
+Las recomendaciones sin evidencia corporativa suficiente se mantienen como recomendaciones que requieren revisión humana; nunca se convierten silenciosamente en conocimiento aprobado.

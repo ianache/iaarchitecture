@@ -3,5 +3,6 @@
   "private": true,
   "type": "module",
   "dependencies": { "@architecture-ai/api": "workspace:*", "@architecture-ai/domain": "workspace:*", "react": "^19.0.0", "react-dom": "^19.0.0" },
-  "scripts": { "build": "tsc -p tsconfig.json" }
+  "scripts": { "dev": "vite", "build": "tsc -p tsconfig.json && vite build", "preview": "vite preview" },
+  "devDependencies": { "vite": "^6.1.0" }
 }

@@ -6,7 +6,7 @@ import { AnalysisRepository, DatabaseStore, ReviewRepository } from "@architectu
 
 const requestSchema = z.object({ requirements: z.string().min(1), knowledgeRevision: z.string().min(1) });
 const reviewSchema = z.object({ reviewer: z.string().min(1).default("human"), comment: z.string().optional() });
-export interface ApiDependencies { orchestrator: ArchitectureOrchestrator; analysisRepository?: AnalysisRepository; reviewRepository?: ReviewRepository; }
+export interface ApiDependencies { orchestrator: ArchitectureOrchestrator; knowledgeRevision?: string; analysisRepository?: AnalysisRepository; reviewRepository?: ReviewRepository; }
 
 export function buildApp(dependencies: ApiDependencies): FastifyInstance {
   const app = Fastify({ logger: false });
@@ -27,10 +27,11 @@ export function buildApp(dependencies: ApiDependencies): FastifyInstance {
   app.post("/analyses", async (request, reply) => {
     const parsed = requestSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send({ code: "INVALID_REQUEST", issues: parsed.error.issues });
+    const knowledgeRevision = parsed.data.knowledgeRevision === "HEAD" ? dependencies.knowledgeRevision ?? parsed.data.knowledgeRevision : parsed.data.knowledgeRevision;
     const id = await analyses.nextId();
-    await analyses.create({ id, requirements: parsed.data.requirements, knowledgeRevision: parsed.data.knowledgeRevision });
+    await analyses.create({ id, requirements: parsed.data.requirements, knowledgeRevision });
     try {
-      const result = await dependencies.orchestrator.run({ ...parsed.data, analysisId: id });
+      const result = await dependencies.orchestrator.run({ ...parsed.data, knowledgeRevision, analysisId: id });
       await analyses.updateResult(id, result);
       await Promise.all(result.context.decisions.map((decision) => reviews.saveDecision(id, decision)));
       return reply.code(201).send({ id, status: result.packageStatus, traceability: result.context.links.length });
@@ -77,4 +78,4 @@ export function buildApp(dependencies: ApiDependencies): FastifyInstance {
   return app;
 }
 
-export function createDefaultApp(retriever: EvidenceRetriever, model: ArchitectureModel): FastifyInstance { return buildApp({ orchestrator: new ArchitectureOrchestrator(retriever, model) }); }
+export function createDefaultApp(retriever: EvidenceRetriever, model: ArchitectureModel, knowledgeRevision?: string): FastifyInstance { return buildApp({ orchestrator: new ArchitectureOrchestrator(retriever, model), knowledgeRevision }); }

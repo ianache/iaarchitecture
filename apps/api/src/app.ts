@@ -13,6 +13,15 @@ export function buildApp(dependencies: ApiDependencies): FastifyInstance {
   const store = dependencies.analysisRepository && dependencies.reviewRepository ? undefined : DatabaseStore.open(process.env.ARCHITECTURE_AI_DB ?? ".architecture-ai/architecture-ai.sqlite");
   const analyses = dependencies.analysisRepository ?? new AnalysisRepository(store!);
   const reviews = dependencies.reviewRepository ?? new ReviewRepository(store!);
+  const allowedOrigins = new Set((process.env.ARCHITECTURE_AI_CORS_ORIGIN ?? "http://localhost:5173,http://127.0.0.1:5173").split(",").map((origin) => origin.trim()));
+  app.addHook("onRequest", async (request, reply) => {
+    const origin = request.headers.origin;
+    if (origin && allowedOrigins.has(origin)) reply.header("access-control-allow-origin", origin);
+    reply.header("access-control-allow-methods", "GET,POST,OPTIONS");
+    reply.header("access-control-allow-headers", "content-type");
+    reply.header("vary", "Origin");
+    if (request.method === "OPTIONS") return reply.code(204).send();
+  });
   app.addHook("onClose", async () => store?.close());
 
   app.post("/analyses", async (request, reply) => {

@@ -1,0 +1,8 @@
+{
+  "name": "@architecture-ai/cli",
+  "private": true,
+  "type": "module",
+  "dependencies": { "@architecture-ai/api": "workspace:*", "commander": "^13.1.0" },
+  "scripts": { "build": "tsc -p tsconfig.json" },
+  "bin": { "architecture-ai": "dist/main.js" }
+}

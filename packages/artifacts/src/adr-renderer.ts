@@ -1,0 +1,2 @@
+import type { ArchitectureDecision } from "@architecture-ai/domain";
+export function renderAdr(decision: ArchitectureDecision): string { return `# ${decision.id}: ${decision.title}\n\nStatus: ${decision.status}\n\n## Context\n${decision.context}\n\n## Decision\n${decision.decision}\n\n## Rationale\n${decision.rationale}\n\n## Evidence\n${decision.evidenceIds.map((id) => `- ${id}`).join("\n")}\n`; }

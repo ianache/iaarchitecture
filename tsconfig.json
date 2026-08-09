@@ -1,0 +1,4 @@
+{
+  "files": [],
+  "references": [{ "path": "packages/domain" }, { "path": "packages/knowledge" }, { "path": "packages/retrieval" }, { "path": "packages/orchestrator" }, { "path": "packages/artifacts" }, { "path": "packages/governance" }, { "path": "packages/test-fixtures" }, { "path": "apps/api" }, { "path": "apps/cli" }, { "path": "apps/web" }, { "path": "tests/e2e" }]
+}

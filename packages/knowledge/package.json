@@ -1,0 +1,9 @@
+{
+  "name": "@architecture-ai/knowledge",
+  "private": true,
+  "type": "module",
+  "dependencies": { "@architecture-ai/domain": "workspace:*" },
+  "exports": { ".": "./dist/index.js" },
+  "types": "./dist/index.d.ts",
+  "scripts": { "build": "tsc -p tsconfig.json" }
+}

@@ -1,0 +1,7 @@
+import { describe, expect, it } from "vitest";
+import type { ArchitectureModel, EvidenceRetriever, RetrievedEvidence } from "@architecture-ai/domain";
+import { buildApp } from "./app.js";
+import { ArchitectureOrchestrator } from "@architecture-ai/orchestrator";
+const evidence: RetrievedEvidence[] = [{ id: "E-1", knowledgeId: "KI-1", revision: "abc", excerpt: "contracts", classification: "STANDARD", confidence: 1, method: "fixture", score: 1 }];
+const orchestrator = new ArchitectureOrchestrator({ retrieve: async () => evidence } satisfies EvidenceRetriever, { complete: async () => ({ output: "fixture" }) } satisfies ArchitectureModel);
+describe("API routes", () => { it("creates and retrieves an analysis", async () => { const app = buildApp({ orchestrator }); const created = await app.inject({ method: "POST", url: "/analyses", payload: { requirements: "Submit order", knowledgeRevision: "abc" } }); expect(created.statusCode).toBe(201); const id = created.json().id; const fetched = await app.inject({ method: "GET", url: `/analyses/${id}` }); expect(fetched.statusCode).toBe(200); expect(fetched.json().context.revision).toBe("abc"); await app.close(); }); it("validates requests", async () => { const app = buildApp({ orchestrator }); const response = await app.inject({ method: "POST", url: "/analyses", payload: {} }); expect(response.statusCode).toBe(400); expect(response.json().code).toBe("INVALID_REQUEST"); await app.close(); }); });

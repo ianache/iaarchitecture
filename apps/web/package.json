@@ -1,0 +1,7 @@
+{
+  "name": "@architecture-ai/web",
+  "private": true,
+  "type": "module",
+  "dependencies": { "@architecture-ai/api": "workspace:*", "@architecture-ai/domain": "workspace:*", "react": "^19.0.0", "react-dom": "^19.0.0" },
+  "scripts": { "build": "tsc -p tsconfig.json" }
+}

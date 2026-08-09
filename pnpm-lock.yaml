@@ -113,6 +113,36 @@ importers:
         specifier: workspace:*
         version: link:../domain
 
+  packages/test-fixtures:
+    dependencies:
+      '@architecture-ai/domain':
+        specifier: workspace:*
+        version: link:../domain
+
+  tests/e2e:
+    dependencies:
+      '@architecture-ai/artifacts':
+        specifier: workspace:*
+        version: link:../../packages/artifacts
+      '@architecture-ai/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
+      '@architecture-ai/governance':
+        specifier: workspace:*
+        version: link:../../packages/governance
+      '@architecture-ai/knowledge':
+        specifier: workspace:*
+        version: link:../../packages/knowledge
+      '@architecture-ai/orchestrator':
+        specifier: workspace:*
+        version: link:../../packages/orchestrator
+      '@architecture-ai/retrieval':
+        specifier: workspace:*
+        version: link:../../packages/retrieval
+      '@architecture-ai/test-fixtures':
+        specifier: workspace:*
+        version: link:../../packages/test-fixtures
+
 packages:
 
   '@esbuild/aix-ppc64@0.21.5':

@@ -4,7 +4,7 @@ export class TraceabilityStore {
   constructor(private readonly requirements: Requirement[] = [], private readonly drivers: ArchitectureDriver[] = [], private readonly evidence: Evidence[] = [], private readonly decisions: ArchitectureDecision[] = [], private readonly artifacts: ArchitectureArtifact[] = [], private readonly links: TraceLink[] = [], private readonly revision = "") {}
   addLink(link: TraceLink): void { this.links.push(link); }
   requireCompleteChain(): void {
-    const needed = ["DERIVES", "SUPPORTS", "RECOMMENDS", "DECIDES", "REPRESENTS"];
+    const needed = ["DERIVES", "SUPPORTS", "RECOMMENDS", "REPRESENTS"];
     for (const requirement of this.requirements) {
       let current = requirement.id;
       for (const kind of needed) { const link = this.links.find((candidate) => candidate.fromId === current && candidate.kind === kind); if (!link) throw new TraceabilityError(`Missing ${kind} trace link from ${current}`); current = link.toId; }

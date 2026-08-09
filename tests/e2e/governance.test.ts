@@ -1,0 +1,4 @@
+import { describe, expect, it } from "vitest";
+import type { ArchitectureDecision } from "@architecture-ai/domain";
+import { ReviewService } from "@architecture-ai/governance";
+describe("Architecture governance", () => { it("requires human review before approval", () => { const decision: ArchitectureDecision = { id: "DEC-E2E", title: "Model suggestion", context: "No corporate evidence", decision: "Review recommendation", rationale: "Explicit gap", evidenceIds: [], sourceRequirementIds: ["REQ-1"], significant: true, status: "DRAFT", classification: "RECOMMENDATION" }; const reviews = new ReviewService(); reviews.addDecision(decision); expect(() => reviews.approveDecision(decision.id, "ai")).toThrow("REVIEWED"); reviews.reviewDecision(decision.id, "human"); expect(reviews.approveDecision(decision.id, "human").status).toBe("APPROVED"); }); });

@@ -1,0 +1,11 @@
+import { execFileSync } from "node:child_process";
+import { mkdtemp } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { describe, expect, it } from "vitest";
+import { FilePackageRenderer } from "@architecture-ai/artifacts";
+import { GitKnowledgeRepository } from "@architecture-ai/knowledge";
+import { ArchitectureOrchestrator } from "@architecture-ai/orchestrator";
+import { RetrievalService } from "@architecture-ai/retrieval";
+import { DeterministicModel, referenceRequirements } from "@architecture-ai/test-fixtures";
+describe("Architecture AI vertical slice", () => { it("generates a pinned, traceable package", async () => { const root = process.cwd(); const revision = execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim(); const snapshot = await new GitKnowledgeRepository(root).readRevision(revision); const retrieval = new RetrievalService(); await retrieval.buildProjections(snapshot); const result = await new ArchitectureOrchestrator(retrieval, new DeterministicModel()).run({ requirements: referenceRequirements, knowledgeRevision: revision }); expect(result.context.revision).toBe(revision); expect(result.context.requirements.length).toBeGreaterThan(2); expect(result.context.links.length).toBeGreaterThan(0); expect(result.packageStatus.value).toBe("DRAFT"); const output = await new FilePackageRenderer().renderPackage(result, await mkdtemp(join(tmpdir(), "architecture-package-"))); expect(output.files).toContain("architecture-context.json"); expect(output.files).toContain("diagrams/integration-view.mmd"); expect(output.files.some((file) => file.startsWith("09-adr/"))).toBe(true); }); });

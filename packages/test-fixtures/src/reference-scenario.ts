@@ -1,0 +1,1 @@
+export const referenceRequirements = `Customers submit orders through an application API.\nOrders are persisted with transactional consistency.\nOrder events are published to an external fulfillment integration.\nThe workflow requires measurable availability and recovery targets.`;

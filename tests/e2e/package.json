@@ -1,0 +1,7 @@
+{
+  "name": "@architecture-ai/e2e",
+  "private": true,
+  "type": "module",
+  "dependencies": { "@architecture-ai/artifacts": "workspace:*", "@architecture-ai/domain": "workspace:*", "@architecture-ai/governance": "workspace:*", "@architecture-ai/knowledge": "workspace:*", "@architecture-ai/orchestrator": "workspace:*", "@architecture-ai/retrieval": "workspace:*", "@architecture-ai/test-fixtures": "workspace:*" },
+  "scripts": { "build": "tsc -p tsconfig.json" }
+}

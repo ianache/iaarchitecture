@@ -1,0 +1,6 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "composite": true, "rootDir": ".", "outDir": "dist" },
+  "include": ["*.ts"],
+  "references": [{ "path": "../../packages/artifacts" }, { "path": "../../packages/governance" }, { "path": "../../packages/knowledge" }, { "path": "../../packages/orchestrator" }, { "path": "../../packages/retrieval" }, { "path": "../../packages/test-fixtures" }]
+}

@@ -1,0 +1,9 @@
+{
+  "name": "@architecture-ai/orchestrator",
+  "private": true,
+  "type": "module",
+  "dependencies": { "@architecture-ai/domain": "workspace:*", "@architecture-ai/retrieval": "workspace:*" },
+  "exports": { ".": "./dist/index.js" },
+  "types": "./dist/index.d.ts",
+  "scripts": { "build": "tsc -p tsconfig.json" }
+}

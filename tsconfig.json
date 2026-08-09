@@ -1,4 +1,4 @@
 {
   "files": [],
-  "references": [{ "path": "packages/domain" }, { "path": "packages/knowledge" }, { "path": "packages/retrieval" }]
+  "references": [{ "path": "packages/domain" }, { "path": "packages/knowledge" }, { "path": "packages/retrieval" }, { "path": "packages/orchestrator" }]
 }

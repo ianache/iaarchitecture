@@ -22,7 +22,7 @@ pnpm start:api
 
 La API queda en `http://127.0.0.1:3000` y persiste en `.architecture-ai/architecture-ai.sqlite`.
 
-Endpoints: `POST /analyses`, `GET /analyses/:id`, `GET /packages/:id`, `GET /packages/:id/traceability`, `GET /packages/:id/decisions` y `POST /decisions/:id/{review|approve|reject|request-changes}`.
+Endpoints: `POST /analyses`, `GET /analyses/:id`, `POST /packages/:id/generate`, `GET /packages/:id`, `GET /packages/:id/traceability`, `GET /packages/:id/decisions`, `POST /decisions/:id/{review|approve|reject|request-changes}` y `GET /decisions/:id/audit`.
 
 ## CLI
 
@@ -31,12 +31,13 @@ Con la API ejecutándose:
 ```powershell
 pnpm --filter @architecture-ai/cli build
 node apps/cli/dist/main.js analyze --requirements "Customers submit orders" --revision HEAD
-node apps/cli/dist/main.js package ANALYSIS-1
+node apps/cli/dist/main.js package ANALYSIS-1 --output .architecture-ai/packages/ANALYSIS-1
 node apps/cli/dist/main.js review DEC-1 --action review
 node apps/cli/dist/main.js review DEC-1 --action approve
+node apps/cli/dist/main.js audit DEC-1
 ```
 
-La CLI usa exactamente la misma API que la web. Use `ARCHITECTURE_AI_API` para cambiar la URL.
+La CLI usa exactamente la misma API que la web. Use `ARCHITECTURE_AI_API_URL` para cambiar la URL (también se acepta `ARCHITECTURE_AI_API`).
 
 ## Aplicación web
 
@@ -46,7 +47,7 @@ Con la API ejecutándose en otra terminal:
 pnpm --filter @architecture-ai/web dev
 ```
 
-Abra la URL indicada por Vite, normalmente `http://localhost:5173`. La interfaz permite enviar requisitos, revisar decisiones y consultar trazabilidad.
+Abra la URL indicada por Vite, normalmente `http://localhost:5173`. La interfaz permite enviar requisitos, generar el Architecture Package, revisar decisiones, consultar auditoría y navegar la trazabilidad.
 
 Para generar el bundle:
 

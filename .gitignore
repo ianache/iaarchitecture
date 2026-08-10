@@ -4,3 +4,5 @@ dist/
 coverage/
 *.tsbuildinfo
 .architecture-ai/*.sqlite
+.architecture-ai/packages/
+.architecture-ai/*-packages/

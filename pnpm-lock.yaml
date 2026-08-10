@@ -44,6 +44,12 @@ importers:
 
   apps/api:
     dependencies:
+      '@architecture-ai/application':
+        specifier: workspace:*
+        version: link:../../packages/application
+      '@architecture-ai/artifacts':
+        specifier: workspace:*
+        version: link:../../packages/artifacts
       '@architecture-ai/domain':
         specifier: workspace:*
         version: link:../../packages/domain

@@ -24,7 +24,13 @@ La API queda en `http://127.0.0.1:3000` y persiste en `.architecture-ai/architec
 
 Endpoints: `POST /analyses`, `GET /analyses`, `GET /analyses/:id`, `GET /packages/:id`, `POST /packages/:id/generate`, `GET /packages/:id/traceability`, `GET /packages/:id/decisions`, `POST /decisions/:id/{review|approve|reject|request-changes}` y `GET /decisions/:id/audit`.
 
-`GET /analyses` devuelve el historial persistido como resúmenes, sin incluir el resultado completo. `GET /packages/:id` es una consulta de solo lectura del resultado almacenado; no genera archivos. Para crear o regenerar los archivos del paquete use explícitamente `POST /packages/:id/generate`.
+Flujo de historial: cree un análisis con `POST /analyses`, consulte los resúmenes persistidos con `GET /analyses` y seleccione uno con `GET /packages/:id`. Esta última consulta es de solo lectura del resultado almacenado: devuelve la misma revisión, decisiones y trazabilidad después de reiniciar la aplicación contra la misma base SQLite, y no modifica los archivos ya generados. Para crear o regenerar los archivos del paquete use explícitamente `POST /packages/:id/generate`; si el análisis aún no tiene resultado, `GET /packages/:id` responde `409` con el código `PACKAGE_NOT_READY`.
+
+Por ejemplo, la generación explícita por API es:
+
+```powershell
+Invoke-RestMethod -Method Post -Uri http://127.0.0.1:3000/packages/ANALYSIS-1/generate -ContentType application/json -Body '{"outputDirectory":".architecture-ai/packages"}'
+```
 
 ## CLI
 

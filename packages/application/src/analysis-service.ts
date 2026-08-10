@@ -1,4 +1,4 @@
-import type { AnalysisRecord, AnalysisRequest } from "@architecture-ai/domain";
+import type { AnalysisRecord, AnalysisRequest, AnalysisSummary } from "@architecture-ai/domain";
 import { ArchitectureOrchestrator } from "@architecture-ai/orchestrator";
 import { AnalysisRepository, ReviewRepository } from "@architecture-ai/persistence";
 import { ApplicationError } from "./errors.js";
@@ -21,4 +21,5 @@ export class AnalysisService {
     }
   }
   async get(id: string): Promise<AnalysisRecord> { const record = await this.analyses.get(id); if (!record) throw new ApplicationError("NOT_FOUND", `Analysis not found: ${id}`); return record; }
+  async list(): Promise<AnalysisSummary[]> { return this.analyses.list(); }
 }

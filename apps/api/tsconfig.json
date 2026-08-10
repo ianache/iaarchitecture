@@ -3,5 +3,5 @@
   "compilerOptions": { "composite": true, "rootDir": "src", "outDir": "dist" },
   "include": ["src/**/*.ts"],
   "exclude": ["src/**/*.test.ts"],
-  "references": [{ "path": "../../packages/domain" }, { "path": "../../packages/orchestrator" }, { "path": "../../packages/persistence" }]
+  "references": [{ "path": "../../packages/domain" }, { "path": "../../packages/orchestrator" }, { "path": "../../packages/persistence" }, { "path": "../../packages/artifacts" }, { "path": "../../packages/application" }]
 }

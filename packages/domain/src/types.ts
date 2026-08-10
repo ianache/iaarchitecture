@@ -24,6 +24,9 @@ export interface ModelResponse { output: string; suggestions?: string[]; }
 export interface SkillInput { request: AnalysisRequest; context: ArchitectureContext; evidence: RetrievedEvidence[]; priorDecisions: ArchitectureDecision[]; }
 export interface SkillOutput { findings: string[]; drivers?: ArchitectureDriver[]; recommendations?: Recommendation[]; decisions?: ArchitectureDecision[]; evidence?: Evidence[]; risks?: string[]; unresolvedQuestions?: string[]; artifactFragments?: Record<string, string>; }
 export interface AnalysisResult { context: ArchitectureContext; findings: string[]; risks: string[]; artifacts: ArchitectureArtifact[]; packageStatus: PackageStatus; }
+export interface AnalysisRecord { id: string; requirements: string; knowledgeRevision: string; status: string; result?: AnalysisResult; createdAt: string; updatedAt: string; }
+export interface AnalysisRecordInput { id: string; requirements: string; knowledgeRevision: string; status?: string; }
+export interface PackageGenerationResult { analysisId: string; directory: string; files: string[]; context: ArchitectureContext; }
 export interface KnowledgeSnapshot { revision: string; items: KnowledgeItem[]; ontology: ArchitectureOntology; }
 export interface ArchitectureOntology { entityKinds: string[]; relationshipKinds: string[]; }
 export interface ArchitecturePackage { directory: string; files: string[]; context: ArchitectureContext; }

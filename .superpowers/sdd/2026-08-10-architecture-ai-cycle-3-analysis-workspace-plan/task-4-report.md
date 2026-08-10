@@ -39,3 +39,22 @@
 ## Concerns
 
 - No functional concerns found. Root-wide typecheck was intentionally not rerun after the implementation, as noted above.
+
+## Fix Round 1
+
+### Finding addressed
+
+- **HIGH — rejected decision review requests:** The detail review callback launched an async operation without a catch block. A non-2xx `reviewDecision` response therefore rejected without updating the App error state or refreshing state predictably.
+- Added `reviewDecisionAndReload`, which clears any prior error, awaits the review and subsequent reload, and captures failures in the existing error state. The detail callback now calls this guarded flow.
+- Added a focused regression test proving a rejected review request records its error and does not reload stale analysis data.
+
+### Commands and outputs
+
+- `$bin\\tsc.cmd -b` — passed (exit code 0).
+- `$bin\\vitest.cmd run apps/web/src/AnalysisHistory.test.tsx apps/web/src/DecisionReview.test.tsx --pool=forks --maxWorkers=1 --minWorkers=1` — passed: 2 files, 5 tests, 0 failures.
+- `Push-Location apps/web; $bin\\vite.cmd build` — passed: 38 modules transformed and production assets emitted.
+
+### Fix review
+
+- The regression test fails if the guarded flow or its error handler is removed.
+- Review failures now use the same error-state convention as analysis loading and package generation.

@@ -19,7 +19,7 @@ Implemented and verified.
 
 ## Commit
 
-`e87069c` — `feat: expose persisted analysis history`
+`b896e0c` — `feat: expose persisted analysis history`
 
 ## Tests and output
 

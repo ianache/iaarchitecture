@@ -1,8 +1,7 @@
-import type { AnalysisResult } from "@architecture-ai/domain";
+import type { AnalysisRecord, AnalysisRecordInput, AnalysisResult, AnalysisSummary } from "@architecture-ai/domain";
 import type { DatabaseStore } from "./database.js";
 
-export interface AnalysisRecord { id: string; requirements: string; knowledgeRevision: string; status: string; result?: AnalysisResult; createdAt: string; updatedAt: string; }
-export interface AnalysisRecordInput { id: string; requirements: string; knowledgeRevision: string; status?: string; }
+export type { AnalysisRecord, AnalysisRecordInput } from "@architecture-ai/domain";
 
 export class AnalysisRepository {
   constructor(private readonly store: DatabaseStore) {}
@@ -15,6 +14,18 @@ export class AnalysisRepository {
   async get(id: string): Promise<AnalysisRecord | undefined> {
     const row = this.store.database.prepare("SELECT * FROM analyses WHERE id = ?").get(id) as Record<string, unknown> | undefined;
     return row ? this.map(row) : undefined;
+  }
+  async list(): Promise<AnalysisSummary[]> {
+    const rows = this.store.database.prepare("SELECT id, requirements, knowledge_revision, status, created_at, updated_at, result_json FROM analyses ORDER BY updated_at DESC").all() as Array<Record<string, unknown>>;
+    return rows.map((row) => ({
+      id: String(row.id),
+      requirements: String(row.requirements),
+      knowledgeRevision: String(row.knowledge_revision),
+      status: String(row.status),
+      createdAt: String(row.created_at),
+      updatedAt: String(row.updated_at),
+      hasResult: row.result_json !== null,
+    }));
   }
   async updateResult(id: string, result: AnalysisResult): Promise<void> {
     const now = new Date().toISOString();

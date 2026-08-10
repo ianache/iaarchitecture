@@ -44,4 +44,5 @@ Tests       5 passed (5)
 
 ## Commit hashes
 
-Final commit: `0a80280` (`feat: persist analysis summaries`).
+Implementation commit: `0a80280` (`feat: persist analysis summaries`).
+Report-amendment commit: `08e86af` (`feat: persist analysis summaries`).

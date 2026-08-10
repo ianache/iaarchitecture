@@ -88,6 +88,18 @@ importers:
         specifier: ^6.1.0
         version: 6.4.3(@types/node@22.20.1)
 
+  packages/application:
+    dependencies:
+      '@architecture-ai/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@architecture-ai/orchestrator':
+        specifier: workspace:*
+        version: link:../orchestrator
+      '@architecture-ai/persistence':
+        specifier: workspace:*
+        version: link:../persistence
+
   packages/artifacts:
     dependencies:
       '@architecture-ai/domain':

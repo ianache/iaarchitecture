@@ -1,12 +1,41 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
+import { rmSync } from "node:fs";
 import type { AnalysisResult, ArchitectureModel, EvidenceRetriever, RetrievedEvidence } from "@architecture-ai/domain";
 import { ApplicationError, type PackageService } from "@architecture-ai/application";
+import { AnalysisRepository, DatabaseStore, ReviewRepository } from "@architecture-ai/persistence";
 import { buildApp } from "./app.js";
 import { ArchitectureOrchestrator } from "@architecture-ai/orchestrator";
 const evidence: RetrievedEvidence[] = [{ id: "E-1", knowledgeId: "KI-1", revision: "abc", excerpt: "contracts", classification: "STANDARD", confidence: 1, method: "fixture", score: 1 }];
 const orchestrator = new ArchitectureOrchestrator({ retrieve: async () => evidence } satisfies EvidenceRetriever, { complete: async () => ({ output: "fixture" }) } satisfies ArchitectureModel);
 const storedResult: AnalysisResult = { context: { revision: "abc", requirements: [], drivers: [], evidence: [], decisions: [], artifacts: [], links: [], status: { value: "DRAFT", requiredDecisionIds: [], approvedDecisionIds: [] } }, findings: [], risks: [], artifacts: [], packageStatus: { value: "DRAFT", requiredDecisionIds: [], approvedDecisionIds: [] } };
+const historyDatabasePath = ".architecture-ai/api-history-test.sqlite";
+afterEach(() => { rmSync(historyDatabasePath, { force: true }); });
 describe("API routes", () => { it("creates and retrieves an analysis", async () => { const app = buildApp({ orchestrator }); const created = await app.inject({ method: "POST", url: "/analyses", payload: { requirements: "Submit order", knowledgeRevision: "abc" } }); expect(created.statusCode).toBe(201); const id = created.json().id; const fetched = await app.inject({ method: "GET", url: `/analyses/${id}` }); expect(fetched.statusCode).toBe(200); expect(fetched.json().context.revision).toBe("abc"); await app.close(); }); it("validates requests", async () => { const app = buildApp({ orchestrator }); const response = await app.inject({ method: "POST", url: "/analyses", payload: {} }); expect(response.statusCode).toBe(400); expect(response.json().code).toBe("INVALID_REQUEST"); await app.close(); }); });
+describe("analysis history route", () => {
+  it("returns persisted analysis summaries in descending order with result presence", async () => {
+    const store = DatabaseStore.open(historyDatabasePath);
+    const analysisRepository = new AnalysisRepository(store);
+    const reviewRepository = new ReviewRepository(store);
+    await analysisRepository.create({ id: "ANALYSIS-1", requirements: "Existing analysis", knowledgeRevision: "rev-1" });
+    const app = buildApp({ orchestrator, analysisRepository, reviewRepository });
+    try {
+      const created = await app.inject({ method: "POST", url: "/analyses", payload: { requirements: "New analysis", knowledgeRevision: "rev-2" } });
+      expect(created.statusCode).toBe(201);
+      const response = await app.inject({ method: "GET", url: "/analyses" });
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual({
+        analyses: [
+          expect.objectContaining({ id: "ANALYSIS-2", requirements: "New analysis", knowledgeRevision: "rev-2", status: "DRAFT", hasResult: true }),
+          expect.objectContaining({ id: "ANALYSIS-1", requirements: "Existing analysis", knowledgeRevision: "rev-1", status: "DRAFT", hasResult: false }),
+        ],
+      });
+      expect(response.json().analyses[0]).not.toHaveProperty("result");
+    } finally {
+      await app.close();
+      store.close();
+    }
+  });
+});
 describe("package and governance routes", () => { it("reads a stored package result without generating", async () => { const packageService = { get: async () => storedResult, generate: async () => { throw new Error("generate should not be called"); } } as unknown as PackageService; const app = buildApp({ orchestrator, packageService }); const fetched = await app.inject({ method: "GET", url: "/packages/ANALYSIS-1" }); expect(fetched.statusCode).toBe(200); expect(fetched.json()).toEqual(storedResult); await app.close(); }); it("maps a package that is not ready to conflict", async () => { const packageService = { get: async () => { throw new ApplicationError("PACKAGE_NOT_READY", "Analysis has no result"); }, generate: async () => ({}) } as unknown as PackageService; const app = buildApp({ orchestrator, packageService }); const fetched = await app.inject({ method: "GET", url: "/packages/ANALYSIS-1" }); expect(fetched.statusCode).toBe(409); expect(fetched.json().code).toBe("PACKAGE_NOT_READY"); await app.close(); }); it("generates a package and exposes traceability", async () => { const app = buildApp({ orchestrator }); const created = await app.inject({ method: "POST", url: "/analyses", payload: { requirements: "Submit order", knowledgeRevision: "abc" } }); const id = created.json().id; const generated = await app.inject({ method: "POST", url: `/packages/${id}/generate`, payload: { outputDirectory: ".architecture-ai/api-test-packages" } }); expect(generated.statusCode).toBe(201); expect(generated.json().files).toContain("architecture-context.json"); const traceability = await app.inject({ method: "GET", url: `/packages/${id}/traceability` }); expect(traceability.statusCode).toBe(200); expect(traceability.json().links).toBeDefined(); await app.close(); }); });
 describe("CORS", () => { it("answers browser preflight requests", async () => { const app = buildApp({ orchestrator }); const response = await app.inject({ method: "OPTIONS", url: "/analyses", headers: { origin: "http://localhost:5173", "access-control-request-method": "POST", "access-control-request-headers": "content-type" } }); expect(response.statusCode).toBe(204); expect(response.headers["access-control-allow-origin"]).toBe("http://localhost:5173"); expect(response.headers["access-control-allow-methods"]).toContain("POST"); await app.close(); }); });
 describe("knowledge revision", () => { it("resolves HEAD to the pinned service revision", async () => { const app = buildApp({ orchestrator, knowledgeRevision: "abc" }); const created = await app.inject({ method: "POST", url: "/analyses", payload: { requirements: "Submit order", knowledgeRevision: "HEAD" } }); expect(created.statusCode).toBe(201); const fetched = await app.inject({ method: "GET", url: `/analyses/${created.json().id}` }); expect(fetched.json().context.revision).toBe("abc"); await app.close(); }); });

@@ -22,7 +22,9 @@ pnpm start:api
 
 La API queda en `http://127.0.0.1:3000` y persiste en `.architecture-ai/architecture-ai.sqlite`.
 
-Endpoints: `POST /analyses`, `GET /analyses/:id`, `POST /packages/:id/generate`, `GET /packages/:id`, `GET /packages/:id/traceability`, `GET /packages/:id/decisions`, `POST /decisions/:id/{review|approve|reject|request-changes}` y `GET /decisions/:id/audit`.
+Endpoints: `POST /analyses`, `GET /analyses`, `GET /analyses/:id`, `GET /packages/:id`, `POST /packages/:id/generate`, `GET /packages/:id/traceability`, `GET /packages/:id/decisions`, `POST /decisions/:id/{review|approve|reject|request-changes}` y `GET /decisions/:id/audit`.
+
+`GET /analyses` devuelve el historial persistido como resúmenes, sin incluir el resultado completo. `GET /packages/:id` es una consulta de solo lectura del resultado almacenado; no genera archivos. Para crear o regenerar los archivos del paquete use explícitamente `POST /packages/:id/generate`.
 
 ## CLI
 

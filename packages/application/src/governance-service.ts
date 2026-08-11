@@ -42,6 +42,8 @@ export class GovernanceService {
     const review: Review = { id: `REVIEW-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, decisionId, reviewer, action, comment, at: new Date().toISOString() };
     await this.reviews.updateDecision(updated);
     await this.reviews.recordReview(review);
+    const analysisId = await this.reviews.getDecisionAnalysisId(decisionId);
+    if ((action === "REJECT" || action === "REQUEST_CHANGES") && analysisId) await this.analyses?.markRegenerationRequired(analysisId, `${action} on decision ${decisionId}`);
     await this.syncPackageStatus(decisionId);
     return updated;
   }

@@ -1,12 +1,25 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  domainAnalysisSchema,
   knowledgeItemSchema,
+  nfrValidationSchema,
   requirementSchema,
   traceLinkSchema,
 } from "./schemas.js";
 
 describe("domain schemas", () => {
+  it("accepts traceable domain controls and measurable NFR validations", () => {
+    const analysis = domainAnalysisSchema.parse({
+      domain: "SECURITY",
+      controls: [{ id: "SEC-001", title: "Require MFA", description: "Use MFA for privileged access", sourceRequirementIds: ["REQ-LOGIN"], evidenceIds: ["E-KI-MFA"], status: "VALIDATED" }],
+      gaps: [],
+      assumptions: [],
+    });
+    const validation = nfrValidationSchema.parse({ id: "NFR-001", name: "Availability", metric: "availability", target: 99.9, unit: "%", sourceRequirementIds: ["REQ-LOGIN"], evidenceIds: ["E-KI-SLA"], status: "VALIDATED", rationale: "Supported by the approved SLA standard." });
+    expect(analysis.controls[0].evidenceIds).toEqual(["E-KI-MFA"]);
+    expect(validation.target).toBe(99.9);
+  });
   it("accepts a requirement with a stable id", () => {
     const requirement = requirementSchema.parse({
       id: "REQ-ORDER-SUBMIT",

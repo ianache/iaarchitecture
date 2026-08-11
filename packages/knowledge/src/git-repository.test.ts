@@ -10,4 +10,12 @@ describe("GitKnowledgeRepository", () => {
     expect(snapshot.items.length).toBeGreaterThanOrEqual(8);
     expect(snapshot.ontology.entityKinds).toContain("REQUIREMENT");
   });
+  it("returns INVALID_REVISION for an unresolvable Git revision", async () => {
+    try {
+      await new GitKnowledgeRepository(process.cwd()).readRevision("does-not-exist");
+      throw new Error("Expected the invalid Git revision to be rejected");
+    } catch (error) {
+      expect(error).toMatchObject({ code: "INVALID_REVISION" });
+    }
+  });
 });

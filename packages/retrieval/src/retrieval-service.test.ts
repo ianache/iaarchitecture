@@ -18,6 +18,6 @@ describe("RetrievalService", () => {
   it("rejects a revision mismatch", async () => {
     const service = new RetrievalService();
     await service.buildProjections(snapshot);
-    await expect(service.retrieve({ query: "api", revision: "wrong" })).rejects.toThrow("does not match");
+    await expect(service.retrieve({ query: "api", revision: "wrong" })).rejects.toMatchObject({ code: "INVALID_REVISION" });
   });
 });

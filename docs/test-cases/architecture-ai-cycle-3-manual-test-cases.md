@@ -178,13 +178,15 @@ Invoke-RestMethod `
 $body = @{
   requirements = "Login seguro con contraseña y autenticación 2FA TOTP"
   knowledgeRevision = "HEAD"
-} | ConvertTo-Json
+} | ConvertTo-Json -Compress
+
+$utf8Body = [System.Text.UTF8Encoding]::new($false).GetBytes($body)
 
 Invoke-RestMethod `
   -Method Post `
   -Uri http://127.0.0.1:3000/analyses `
-  -ContentType application/json `
-  -Body $body
+  -ContentType 'application/json; charset=utf-8' `
+  -Body $utf8Body
 ```
 
 **Resultado esperado:** respuesta exitosa con `id`, estado y datos iniciales de trazabilidad.

@@ -4,5 +4,5 @@
   "type": "module",
   "dependencies": { "@architecture-ai/api": "workspace:*", "@architecture-ai/domain": "workspace:*", "react": "^19.0.0", "react-dom": "^19.0.0" },
   "scripts": { "dev": "vite", "build": "tsc -p tsconfig.json && vite build", "preview": "vite preview" },
-  "devDependencies": { "vite": "^6.1.0" }
+  "devDependencies": { "@testing-library/jest-dom": "^6.6.3", "@testing-library/react": "^16.1.0", "jsdom": "^25.0.1", "vite": "^6.1.0" }
 }

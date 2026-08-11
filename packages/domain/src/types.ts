@@ -4,26 +4,31 @@ export const LIFECYCLE_STATES = ["DRAFT", "REVIEWED", "APPROVED"] as const;
 export type LifecycleState = (typeof LIFECYCLE_STATES)[number];
 export type ArchitectureDomain = "APPLICATION" | "DATA" | "SECURITY" | "INFRASTRUCTURE" | "INTEGRATION";
 export type RequirementPriority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+export type ValidationStatus = "VALIDATED" | "PENDING_REVIEW" | "UNSUPPORTED";
 
 export interface Requirement { id: string; title: string; description: string; source?: string; priority?: RequirementPriority; tags: string[]; }
 export interface ArchitectureDriver { id: string; title: string; description: string; domain: ArchitectureDomain; sourceRequirementIds: string[]; }
-export interface KnowledgeItem { id: string; key: string; title: string; summary: string; content?: string; type: KnowledgeType; status: LifecycleState; revision: string; sourcePath: string; tags: string[]; domains?: ArchitectureDomain[]; relatedIds?: string[]; }
-export interface Evidence { id: string; knowledgeId?: string; sourcePath?: string; revision?: string; excerpt: string; classification: KnowledgeType; confidence: number; method: string; }
+export interface DomainControl { id: string; title: string; description: string; sourceRequirementIds: string[]; evidenceIds: string[]; status: ValidationStatus; }
+export interface DomainAnalysis { domain: "SECURITY" | "INFRASTRUCTURE"; controls: DomainControl[]; gaps: string[]; assumptions: string[]; }
+export interface NfrValidation { id: string; name: string; metric: string; target: string | number; unit: string; sourceRequirementIds: string[]; evidenceIds: string[]; status: ValidationStatus; rationale: string; }
+export interface KnowledgeItem { id: string; key: string; title: string; summary: string; content?: string; type: KnowledgeType; status: LifecycleState; revision: string; sourcePath: string; tags: string[]; domains?: ArchitectureDomain[]; relatedIds?: string[]; conflictsWith?: string[]; }
+export interface Evidence { id: string; knowledgeId?: string; sourcePath?: string; revision?: string; excerpt: string; classification: KnowledgeType; confidence: number; method: string; conflictsWith?: string[]; }
 export interface Recommendation { id: string; title: string; rationale: string; evidenceIds: string[]; sourceRequirementIds: string[]; sourceKnowledgeIds: string[]; status: LifecycleState; classification: "RECOMMENDATION"; }
 export interface ArchitectureDecision { id: string; title: string; context: string; decision: string; rationale: string; evidenceIds: string[]; sourceRequirementIds: string[]; significant: boolean; status: LifecycleState; classification: "DECISION" | "EXCEPTION" | "RECOMMENDATION"; }
 export interface TraceLink { id: string; fromId: string; fromType: string; toId: string; toType: string; kind: string; }
 export interface ArchitectureArtifact { id: string; path: string; kind: string; title: string; sourceDecisionIds: string[]; sourceRequirementIds: string[]; }
 export interface Review { id: string; decisionId: string; reviewer: string; action: "REVIEW" | "APPROVE" | "REJECT" | "REQUEST_CHANGES"; comment?: string; at: string; }
 export interface PackageStatus { value: "DRAFT" | "IN_REVIEW" | "APPROVED" | "INCOMPLETE"; requiredDecisionIds: string[]; approvedDecisionIds: string[]; diagnostics?: string[]; }
-export interface ArchitectureContext { revision: string; requirements: Requirement[]; drivers: ArchitectureDriver[]; evidence: Evidence[]; recommendations: Recommendation[]; decisions: ArchitectureDecision[]; artifacts: ArchitectureArtifact[]; links: TraceLink[]; status: PackageStatus; }
+export interface ArchitectureContext { revision: string; requirements: Requirement[]; drivers: ArchitectureDriver[]; evidence: Evidence[]; recommendations: Recommendation[]; decisions: ArchitectureDecision[]; artifacts: ArchitectureArtifact[]; links: TraceLink[]; status: PackageStatus; security?: DomainAnalysis; infrastructure?: DomainAnalysis; nfrValidations?: NfrValidation[]; }
 export interface AnalysisRequest { requirements: string; knowledgeRevision: string; analysisId?: string; }
 export interface RetrievedEvidence extends Evidence { score: number; }
 export interface RetrieveInput { query: string; domains?: ArchitectureDomain[]; types?: KnowledgeType[]; revision: string; limit?: number; }
 export interface ModelRequest { system: string; prompt: string; evidence: Evidence[]; }
 export interface ModelResponse { output: string; suggestions?: string[]; }
 export interface SkillInput { request: AnalysisRequest; context: ArchitectureContext; evidence: RetrievedEvidence[]; priorDecisions: ArchitectureDecision[]; }
-export interface SkillOutput { findings: string[]; drivers?: ArchitectureDriver[]; recommendations?: Recommendation[]; decisions?: ArchitectureDecision[]; evidence?: Evidence[]; risks?: string[]; unresolvedQuestions?: string[]; artifactFragments?: Record<string, string>; }
-export interface AnalysisResult { context: ArchitectureContext; findings: string[]; risks: string[]; artifacts: ArchitectureArtifact[]; packageStatus: PackageStatus; }
+export interface SkillOutput { findings: string[]; drivers?: ArchitectureDriver[]; recommendations?: Recommendation[]; decisions?: ArchitectureDecision[]; evidence?: Evidence[]; risks?: string[]; unresolvedQuestions?: string[]; artifactFragments?: Record<string, string>; domainAnalysis?: DomainAnalysis; nfrValidations?: NfrValidation[]; }
+export interface AnalysisResult { context: ArchitectureContext; findings: string[]; risks: string[]; artifacts: ArchitectureArtifact[]; packageStatus: PackageStatus; generation?: number; }
+export interface AnalysisResultVersion { analysisId: string; generation: number; result: AnalysisResult; archivedAt: string; reason: string; }
 export interface AnalysisRecord { id: string; requirements: string; knowledgeRevision: string; status: string; result?: AnalysisResult; createdAt: string; updatedAt: string; }
 export interface AnalysisSummary { id: string; requirements: string; knowledgeRevision: string; status: string; createdAt: string; updatedAt: string; hasResult: boolean; }
 export interface AnalysisRecordInput { id: string; requirements: string; knowledgeRevision: string; status?: string; }

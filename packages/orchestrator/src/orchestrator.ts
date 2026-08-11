@@ -19,9 +19,18 @@ export class ArchitectureOrchestrator {
     const blank: ArchitectureContext = { revision: request.knowledgeRevision, requirements, drivers: [], evidence: [], recommendations: [], decisions: [], artifacts: [], links: [], status: { value: "DRAFT", requiredDecisionIds: [], approvedDecisionIds: [] } };
     const input = (context: ArchitectureContext, evidence: RetrievedEvidence[] = []): SkillInput => ({ request, context, evidence, priorDecisions: context.decisions });
     const evidence = await this.retriever.retrieve({ query: request.requirements, revision: request.knowledgeRevision, limit: 10 });
+    const standardKnowledgeIds = new Set(evidence.filter((item) => item.classification === "STANDARD").map((item) => item.knowledgeId).filter((id): id is string => Boolean(id)));
+    const conflicting = evidence.find((item) => item.classification === "STANDARD" && item.conflictsWith?.some((knowledgeId) => standardKnowledgeIds.has(knowledgeId)));
+    if (conflicting) throw Object.assign(new Error(`Corporate standard ${conflicting.knowledgeId} conflicts with retrieved standard ${conflicting.conflictsWith?.find((knowledgeId) => standardKnowledgeIds.has(knowledgeId))}`), { code: "STANDARDS_CONFLICT" });
     const driverOutput = identifyDrivers(input(blank, evidence));
     blank.drivers = driverOutput.drivers ?? [];
-    const outputs: SkillOutput[] = [analyzeRequirements(input(blank, evidence)), driverOutput, architectureImpactAnalysis(input(blank, evidence)), designApplication(input(blank, evidence)), designData(input(blank, evidence)), designIntegration(input(blank, evidence)), designSecurity(input(blank, evidence)), designInfrastructure(input(blank, evidence)), validateNfr(input(blank, evidence)), validateStandards(input(blank, evidence))];
+    const securityOutput = designSecurity(input(blank, evidence));
+    const infrastructureOutput = designInfrastructure(input(blank, evidence));
+    const nfrOutput = validateNfr(input(blank, evidence));
+    blank.security = securityOutput.domainAnalysis;
+    blank.infrastructure = infrastructureOutput.domainAnalysis;
+    blank.nfrValidations = nfrOutput.nfrValidations ?? [];
+    const outputs: SkillOutput[] = [analyzeRequirements(input(blank, evidence)), driverOutput, architectureImpactAnalysis(input(blank, evidence)), designApplication(input(blank, evidence)), designData(input(blank, evidence)), designIntegration(input(blank, evidence)), securityOutput, infrastructureOutput, nfrOutput, validateStandards(input(blank, evidence))];
     const review = prepareArchitectureReview(input(blank, evidence));
     blank.evidence = evidence;
     blank.recommendations = requirements.map((requirement, index): Recommendation => {

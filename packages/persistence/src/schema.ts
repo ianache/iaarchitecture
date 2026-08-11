@@ -34,4 +34,13 @@ CREATE TABLE IF NOT EXISTS audit_events (
   created_at TEXT NOT NULL,
   FOREIGN KEY (decision_id) REFERENCES decisions(id)
 );
+CREATE TABLE IF NOT EXISTS analysis_result_versions (
+  analysis_id TEXT NOT NULL,
+  generation INTEGER NOT NULL,
+  result_json TEXT NOT NULL,
+  archived_at TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  PRIMARY KEY (analysis_id, generation),
+  FOREIGN KEY (analysis_id) REFERENCES analyses(id)
+);
 `;

@@ -16,6 +16,7 @@ describe("ApiClient", () => {
     try {
       const client = createApiClient("http://api.test");
       await client.getPackage("ANALYSIS-1");
+      await client.regenerateAnalysis("ANALYSIS-1");
       await client.generatePackage("ANALYSIS-1");
       await client.listAnalyses();
     } finally {
@@ -24,6 +25,7 @@ describe("ApiClient", () => {
 
     expect(requests).toEqual([
       { url: "http://api.test/packages/ANALYSIS-1", method: undefined },
+      { url: "http://api.test/analyses/ANALYSIS-1/regenerate", method: "POST" },
       { url: "http://api.test/packages/ANALYSIS-1/generate", method: "POST" },
       { url: "http://api.test/analyses", method: undefined }
     ]);

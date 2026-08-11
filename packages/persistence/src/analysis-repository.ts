@@ -1,4 +1,4 @@
-import type { AnalysisRecord, AnalysisRecordInput, AnalysisResult, AnalysisSummary } from "@architecture-ai/domain";
+import type { AnalysisRecord, AnalysisRecordInput, AnalysisResult, AnalysisResultVersion, AnalysisSummary } from "@architecture-ai/domain";
 import type { DatabaseStore } from "./database.js";
 
 export type { AnalysisRecord, AnalysisRecordInput } from "@architecture-ai/domain";
@@ -37,6 +37,22 @@ export class AnalysisRepository {
     if (!record?.result) return;
     const result = { ...record.result, packageStatus: { ...record.result.packageStatus, value: status }, context: { ...record.result.context, status: { ...record.result.context.status, value: status } } };
     await this.updateResult(id, result);
+  }
+  async markRegenerationRequired(id: string, reason: string): Promise<void> {
+    const record = await this.get(id);
+    if (!record?.result) return;
+    const current = record.result;
+    if (!current.packageStatus.diagnostics?.some((diagnostic) => diagnostic.startsWith("Regeneration required:"))) {
+      const generation = current.generation ?? 1;
+      this.store.database.prepare("INSERT OR IGNORE INTO analysis_result_versions (analysis_id, generation, result_json, archived_at, reason) VALUES (?, ?, ?, ?, ?)").run(id, generation, JSON.stringify(current), new Date().toISOString(), reason);
+    }
+    const diagnostic = `Regeneration required: ${reason}`;
+    const diagnostics = [...(current.packageStatus.diagnostics ?? []).filter((item) => !item.startsWith("Regeneration required:")), diagnostic];
+    await this.updateResult(id, { ...current, generation: current.generation ?? 1, packageStatus: { ...current.packageStatus, value: "DRAFT", diagnostics }, context: { ...current.context, status: { ...current.context.status, value: "DRAFT", diagnostics } } });
+  }
+  async listResultHistory(id: string): Promise<AnalysisResultVersion[]> {
+    const rows = this.store.database.prepare("SELECT analysis_id, generation, result_json, archived_at, reason FROM analysis_result_versions WHERE analysis_id = ? ORDER BY generation").all(id) as Array<{ analysis_id: string; generation: number; result_json: string; archived_at: string; reason: string }>;
+    return rows.map((row) => ({ analysisId: row.analysis_id, generation: Number(row.generation), result: JSON.parse(row.result_json) as AnalysisResult, archivedAt: row.archived_at, reason: row.reason }));
   }
   private map(row: Record<string, unknown>): AnalysisRecord { return { id: String(row.id), requirements: String(row.requirements), knowledgeRevision: String(row.knowledge_revision), status: String(row.status), result: row.result_json ? JSON.parse(String(row.result_json)) as AnalysisResult : undefined, createdAt: String(row.created_at), updatedAt: String(row.updated_at) }; }
 }

@@ -11,7 +11,8 @@ function walk(dir: string): string[] { return readdirSync(dir, { withFileTypes: 
 export class GitKnowledgeRepository implements KnowledgeSource {
   constructor(private readonly root: string) {}
   readRevision(revision: string): Promise<KnowledgeSnapshot> {
-    const resolved = git(["rev-parse", "--verify", `${revision}^{commit}`], this.root);
+    let resolved: string;
+    try { resolved = git(["rev-parse", "--verify", `${revision}^{commit}`], this.root); } catch (error) { throw Object.assign(new Error(`Git revision is invalid: ${revision}`), { code: "INVALID_REVISION", cause: error }); }
     const files = walk(join(this.root, "knowledge")).filter((file) => file.endsWith(".md"));
     const items = files.map((file) => parseKnowledgeDocument(git(["show", `${resolved}:${relative(this.root, file).replaceAll("\\", "/")}`], this.root), relative(this.root, file).replaceAll("\\", "/"), resolved));
     const ontology = loadOntology(git(["show", `${resolved}:ontology/architecture-ontology.yaml`], this.root));

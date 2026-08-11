@@ -32,6 +32,14 @@ Por ejemplo, la generación explícita por API es:
 Invoke-RestMethod -Method Post -Uri http://127.0.0.1:3000/packages/ANALYSIS-1/generate -ContentType application/json -Body '{"outputDirectory":".architecture-ai/packages"}'
 ```
 
+For `POST /analyses` from Windows PowerShell with non-ASCII characters, send UTF-8 bytes explicitly. This avoids `FST_ERR_CTP_INVALID_CONTENT_LENGTH`:
+
+```powershell
+$body = @{ requirements = 'Login con contraseña y TOTP 2FA'; knowledgeRevision = 'HEAD' } | ConvertTo-Json -Compress
+$utf8Body = [System.Text.UTF8Encoding]::new($false).GetBytes($body)
+Invoke-RestMethod -Method Post -Uri http://127.0.0.1:3000/analyses -ContentType 'application/json; charset=utf-8' -Body $utf8Body
+```
+
 ## CLI
 
 Con la API ejecutándose:

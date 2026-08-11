@@ -8,9 +8,10 @@ function parseValue(value: string): string | string[] {
 }
 
 export function parseKnowledgeDocument(markdown: string, path: string, revision = "working-tree"): KnowledgeItem {
-  if (!markdown.startsWith("---")) throw new Error(`Knowledge document ${path} is missing frontmatter`);
+  const invalid = (message: string): never => { throw Object.assign(new Error(message), { code: "INVALID_OKF_METADATA" }); };
+  if (!markdown.startsWith("---")) return invalid(`Knowledge document ${path} is missing frontmatter`);
   const end = markdown.indexOf("\n---", 3);
-  if (end < 0) throw new Error(`Knowledge document ${path} has unterminated frontmatter`);
+  if (end < 0) return invalid(`Knowledge document ${path} has unterminated frontmatter`);
   const metadata: Record<string, string | string[]> = {};
   for (const line of markdown.slice(3, end).split(/\r?\n/)) {
     const separator = line.indexOf(":");
@@ -18,5 +19,5 @@ export function parseKnowledgeDocument(markdown: string, path: string, revision 
     metadata[line.slice(0, separator).trim()] = parseValue(line.slice(separator + 1));
   }
   const content = markdown.slice(end + 4).trim();
-  return knowledgeItemSchema.parse({ ...metadata, revision, sourcePath: path, content, tags: metadata.tags ?? [] });
+  try { return knowledgeItemSchema.parse({ ...metadata, revision, sourcePath: path, content, tags: metadata.tags ?? [] }); } catch { return invalid(`Knowledge document ${path} has invalid OKF metadata`); }
 }

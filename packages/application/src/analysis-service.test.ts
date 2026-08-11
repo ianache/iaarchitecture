@@ -19,6 +19,11 @@ describe("AnalysisService", () => {
 try { const loaded = await second.service.get(created!.id); expect(loaded.result?.context.revision).toBe("abc"); expect(loaded.result?.context.decisions.length).toBeGreaterThan(0); expect(loaded.status).toBe("INCOMPLETE"); } finally { second.store.close(); }
   });
   it("returns a typed not-found error", async () => { const current = service(); try { await expect(current.service.get("ANALYSIS-404")).rejects.toMatchObject({ code: "NOT_FOUND" }); } finally { current.store.close(); } });
+  it("preserves a structured knowledge validation error", async () => {
+    const store = DatabaseStore.open(databasePath);
+    const failing = { run: async () => { throw Object.assign(new Error("Knowledge metadata is invalid"), { code: "INVALID_OKF_METADATA" }); } } as unknown as ArchitectureOrchestrator;
+    try { await expect(new AnalysisService(failing, new AnalysisRepository(store), new ReviewRepository(store)).create({ requirements: "Login", knowledgeRevision: "abc" })).rejects.toMatchObject({ code: "INVALID_OKF_METADATA", message: "Knowledge metadata is invalid" }); } finally { store.close(); }
+  });
   it("lists persisted summaries without calling the orchestrator", async () => {
     let completions = 0;
     const current = service(() => { completions += 1; });

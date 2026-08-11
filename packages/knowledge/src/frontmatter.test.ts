@@ -8,7 +8,7 @@ describe("knowledge frontmatter", () => {
     expect(item.content).toContain("explicit versioning");
     expect(item.tags).toEqual(["integration", "api"]);
   });
-  it("rejects invalid metadata", () => {
-    expect(() => parseKnowledgeDocument("---\nid: KI-1\ntitle: Missing\n---\n", "bad.md")).toThrow();
+  it("rejects invalid metadata with the stable OKF contract", () => {
+    try { parseKnowledgeDocument("---\nid: KI-1\ntitle: Missing\n---\n", "bad.md"); } catch (error) { expect(error).toMatchObject({ code: "INVALID_OKF_METADATA" }); }
   });
 });

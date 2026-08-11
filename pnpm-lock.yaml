@@ -53,6 +53,9 @@ importers:
       '@architecture-ai/domain':
         specifier: workspace:*
         version: link:../../packages/domain
+      '@architecture-ai/governance':
+        specifier: workspace:*
+        version: link:../../packages/governance
       '@architecture-ai/orchestrator':
         specifier: workspace:*
         version: link:../../packages/orchestrator

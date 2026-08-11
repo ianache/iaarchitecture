@@ -6,7 +6,7 @@ import { AnalysisRepository, DatabaseStore } from "@architecture-ai/persistence"
 import { PackageService } from "./package-service.js";
 
 const databasePath = ".architecture-ai/package-service-test.sqlite";
-const result: AnalysisResult = { context: { revision: "abc", requirements: [], drivers: [], evidence: [], decisions: [], artifacts: [], links: [], status: { value: "DRAFT", requiredDecisionIds: [], approvedDecisionIds: [] } }, findings: [], risks: [], artifacts: [], packageStatus: { value: "DRAFT", requiredDecisionIds: [], approvedDecisionIds: [] } };
+const result: AnalysisResult = { context: { revision: "abc", requirements: [], drivers: [], evidence: [], recommendations: [], decisions: [], artifacts: [], links: [], status: { value: "DRAFT", requiredDecisionIds: [], approvedDecisionIds: [] } }, findings: [], risks: [], artifacts: [], packageStatus: { value: "DRAFT", requiredDecisionIds: [], approvedDecisionIds: [] } };
 let renderCalls = 0;
 const renderer: PackageRenderer = { renderPackage: async (_value, outputDirectory): Promise<ArchitecturePackage> => { renderCalls += 1; return { directory: outputDirectory, files: ["01-architecture-analysis.md", "architecture-context.json", "09-adr/ADR-1.md", "diagrams/context.mmd"], context: result.context }; } };
 afterEach(() => rmSync(databasePath, { force: true }));

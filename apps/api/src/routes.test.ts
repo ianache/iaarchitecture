@@ -25,7 +25,7 @@ describe("analysis history route", () => {
       expect(response.statusCode).toBe(200);
       expect(response.json()).toEqual({
         analyses: [
-          expect.objectContaining({ id: "ANALYSIS-2", requirements: "New analysis", knowledgeRevision: "rev-2", status: "DRAFT", hasResult: true }),
+        expect.objectContaining({ id: "ANALYSIS-2", requirements: "New analysis", knowledgeRevision: "rev-2", status: "INCOMPLETE", hasResult: true }),
           expect.objectContaining({ id: "ANALYSIS-1", requirements: "Existing analysis", knowledgeRevision: "rev-1", status: "DRAFT", hasResult: false }),
         ],
       });

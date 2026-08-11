@@ -9,13 +9,13 @@ export interface Requirement { id: string; title: string; description: string; s
 export interface ArchitectureDriver { id: string; title: string; description: string; domain: ArchitectureDomain; sourceRequirementIds: string[]; }
 export interface KnowledgeItem { id: string; key: string; title: string; summary: string; content?: string; type: KnowledgeType; status: LifecycleState; revision: string; sourcePath: string; tags: string[]; domains?: ArchitectureDomain[]; relatedIds?: string[]; }
 export interface Evidence { id: string; knowledgeId?: string; sourcePath?: string; revision?: string; excerpt: string; classification: KnowledgeType; confidence: number; method: string; }
-export interface Recommendation { id: string; title: string; rationale: string; evidenceIds: string[]; status: LifecycleState; classification: "RECOMMENDATION"; }
+export interface Recommendation { id: string; title: string; rationale: string; evidenceIds: string[]; sourceRequirementIds: string[]; sourceKnowledgeIds: string[]; status: LifecycleState; classification: "RECOMMENDATION"; }
 export interface ArchitectureDecision { id: string; title: string; context: string; decision: string; rationale: string; evidenceIds: string[]; sourceRequirementIds: string[]; significant: boolean; status: LifecycleState; classification: "DECISION" | "EXCEPTION" | "RECOMMENDATION"; }
 export interface TraceLink { id: string; fromId: string; fromType: string; toId: string; toType: string; kind: string; }
 export interface ArchitectureArtifact { id: string; path: string; kind: string; title: string; sourceDecisionIds: string[]; sourceRequirementIds: string[]; }
 export interface Review { id: string; decisionId: string; reviewer: string; action: "REVIEW" | "APPROVE" | "REJECT" | "REQUEST_CHANGES"; comment?: string; at: string; }
-export interface PackageStatus { value: "DRAFT" | "IN_REVIEW" | "APPROVED" | "INCOMPLETE"; requiredDecisionIds: string[]; approvedDecisionIds: string[]; }
-export interface ArchitectureContext { revision: string; requirements: Requirement[]; drivers: ArchitectureDriver[]; evidence: Evidence[]; decisions: ArchitectureDecision[]; artifacts: ArchitectureArtifact[]; links: TraceLink[]; status: PackageStatus; }
+export interface PackageStatus { value: "DRAFT" | "IN_REVIEW" | "APPROVED" | "INCOMPLETE"; requiredDecisionIds: string[]; approvedDecisionIds: string[]; diagnostics?: string[]; }
+export interface ArchitectureContext { revision: string; requirements: Requirement[]; drivers: ArchitectureDriver[]; evidence: Evidence[]; recommendations: Recommendation[]; decisions: ArchitectureDecision[]; artifacts: ArchitectureArtifact[]; links: TraceLink[]; status: PackageStatus; }
 export interface AnalysisRequest { requirements: string; knowledgeRevision: string; analysisId?: string; }
 export interface RetrievedEvidence extends Evidence { score: number; }
 export interface RetrieveInput { query: string; domains?: ArchitectureDomain[]; types?: KnowledgeType[]; revision: string; limit?: number; }
@@ -37,4 +37,5 @@ export interface KnowledgeSource { readRevision(revision: string): Promise<Knowl
 export interface EvidenceRetriever { retrieve(input: RetrieveInput): Promise<RetrievedEvidence[]>; }
 export interface ArchitectureModel { complete(input: ModelRequest): Promise<ModelResponse>; }
 export interface PackageRenderer { renderPackage(result: AnalysisResult, outputDirectory: string): Promise<ArchitecturePackage>; }
-export interface GitWorkspace { createBranch(name: string, revision: string): Promise<string>; writePackage(directory: string, files: Record<string, string>): Promise<void>; prepareReview(message: string): Promise<{ branch: string; commit?: string; }>; }
+export interface GitWorkspace { createBranch(name: string, revision: string): Promise<string>; getWorkingDirectory(): string; writePackage(directory: string, files: Record<string, string>): Promise<void>; prepareReview(message: string): Promise<{ branch: string; commit?: string; }>; }
+export interface PackagePublicationResult { analysisId: string; branch: string; commit?: string; directory: string; files: string[]; }

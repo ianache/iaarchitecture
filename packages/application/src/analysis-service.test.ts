@@ -16,7 +16,7 @@ describe("AnalysisService", () => {
     let created: Awaited<ReturnType<typeof first.service.create>>;
     try { created = await first.service.create({ requirements: "Customers submit orders", knowledgeRevision: "abc" }); } finally { first.store.close(); }
     const second = service();
-    try { const loaded = await second.service.get(created!.id); expect(loaded.result?.context.revision).toBe("abc"); expect(loaded.result?.context.decisions.length).toBeGreaterThan(0); expect(loaded.status).toBe("DRAFT"); } finally { second.store.close(); }
+try { const loaded = await second.service.get(created!.id); expect(loaded.result?.context.revision).toBe("abc"); expect(loaded.result?.context.decisions.length).toBeGreaterThan(0); expect(loaded.status).toBe("INCOMPLETE"); } finally { second.store.close(); }
   });
   it("returns a typed not-found error", async () => { const current = service(); try { await expect(current.service.get("ANALYSIS-404")).rejects.toMatchObject({ code: "NOT_FOUND" }); } finally { current.store.close(); } });
   it("lists persisted summaries without calling the orchestrator", async () => {

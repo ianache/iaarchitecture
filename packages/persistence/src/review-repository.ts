@@ -11,6 +11,10 @@ export class ReviewRepository {
     const row = this.store.database.prepare("SELECT decision_json FROM decisions WHERE id = ?").get(id) as { decision_json?: string } | undefined;
     return row?.decision_json ? JSON.parse(row.decision_json) as ArchitectureDecision : undefined;
   }
+  async getDecisionAnalysisId(id: string): Promise<string | undefined> {
+    const row = this.store.database.prepare("SELECT analysis_id FROM decisions WHERE id = ?").get(id) as { analysis_id?: string } | undefined;
+    return row?.analysis_id;
+  }
   async listDecisions(analysisId: string): Promise<ArchitectureDecision[]> {
     const rows = this.store.database.prepare("SELECT decision_json FROM decisions WHERE analysis_id = ? ORDER BY created_at").all(analysisId) as Array<{ decision_json: string }>;
     return rows.map((row) => JSON.parse(row.decision_json) as ArchitectureDecision);

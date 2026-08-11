@@ -5,8 +5,11 @@ import { SubmitRequirements } from "./pages/SubmitRequirements.js";
 import { AnalysisDetail } from "./pages/AnalysisDetail.js";
 import { AnalysisHistory } from "./pages/AnalysisHistory.js";
 
-export async function reviewDecisionAndReload({ client, decisionId, action, analysisId, load, setError }: { client: Pick<ApiClient, "reviewDecision">; decisionId: string; action: "approve" | "reject" | "request-changes"; analysisId: string; load: (id: string) => Promise<void>; setError: (error?: string) => void }) {
+export async function reviewDecisionAndReload({ client, decisionId, action, analysisId, load, setError }: { client: Pick<ApiClient, "reviewDecision">; decisionId: string; action: "review" | "approve" | "reject" | "request-changes"; analysisId: string; load: (id: string) => Promise<void>; setError: (error?: string) => void }) {
   try { setError(undefined); await client.reviewDecision(decisionId, action); await load(analysisId); } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+}
+export async function publishPackageAndReport({ client, analysisId, setError }: { client: Pick<ApiClient, "publishPackage">; analysisId: string; setError: (error?: string) => void }) {
+  try { setError(undefined); const result = await client.publishPackage(analysisId); setError(`Package published on ${result.branch}${result.commit ? ` at ${result.commit}` : ""}.`); } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
 }
 
 export function App() {
@@ -16,6 +19,6 @@ export function App() {
   async function load(id: string) { try { setError(undefined); const [result, decisionResponse, traceability] = await Promise.all([client.getPackage(id), client.getDecisions(id), client.getTraceability(id)]); const events = await Promise.all(decisionResponse.decisions.map((decision) => client.getAudit(decision.id))); setAnalysisId(id); setPackageData(result); setDecisions(decisionResponse.decisions); setLinks(traceability.links); setAudit(events.flatMap((entry) => entry.events)); setScreen("detail"); } catch (e) { setError(e instanceof Error ? e.message : String(e)); } }
   useEffect(() => { void loadHistory(); }, []);
   if (screen === "new") return <>{error && <p role="alert">{error}</p>}<SubmitRequirements client={client} onCreated={(id) => { void load(id); }} /></>;
-  if (screen === "detail" && analysisId && packageData) return <>{error && <p role="alert">{error}</p>}<AnalysisDetail id={analysisId} result={packageData} decisions={decisions} links={links} audit={audit} onBack={() => { setScreen("history"); void loadHistory(); }} onGenerate={() => { void (async () => { try { setError(undefined); await client.generatePackage(analysisId); await load(analysisId); } catch (e) { setError(e instanceof Error ? e.message : String(e)); } })(); }} onReview={(id, action) => { void reviewDecisionAndReload({ client, decisionId: id, action, analysisId, load, setError }); }} /></>;
+  if (screen === "detail" && analysisId && packageData) return <>{error && <p role="alert">{error}</p>}<AnalysisDetail id={analysisId} result={packageData} decisions={decisions} links={links} audit={audit} onBack={() => { setScreen("history"); void loadHistory(); }} onGenerate={() => { void (async () => { try { setError(undefined); await client.generatePackage(analysisId); await load(analysisId); } catch (e) { setError(e instanceof Error ? e.message : String(e)); } })(); }} onPublish={() => { void publishPackageAndReport({ client, analysisId, setError }); }} onReview={(id, action) => { void reviewDecisionAndReload({ client, decisionId: id, action, analysisId, load, setError }); }} /></>;
   return <>{error && <main><p role="alert">{error}</p></main>}<AnalysisHistory analyses={analyses} onSelect={(id) => { void load(id); }} onNewAnalysis={() => { setError(undefined); setScreen("new"); }} /></>;
 }

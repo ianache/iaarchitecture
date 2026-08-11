@@ -7,7 +7,7 @@ import { rmSync } from "node:fs";
 const path = ".architecture-ai/persistence-test.sqlite";
 afterEach(() => { rmSync(path, { force: true }); });
 const decision: ArchitectureDecision = { id: "DEC-1", title: "Use API", context: "Need stable contracts", decision: "Use versioned API", rationale: "Compatibility", evidenceIds: ["E-1"], sourceRequirementIds: ["REQ-1"], significant: true, status: "DRAFT", classification: "DECISION" };
-const result: AnalysisResult = { context: { revision: "abc", requirements: [], drivers: [], evidence: [], decisions: [], artifacts: [], links: [], status: { value: "DRAFT", requiredDecisionIds: [], approvedDecisionIds: [] } }, findings: [], risks: [], artifacts: [], packageStatus: { value: "DRAFT", requiredDecisionIds: [], approvedDecisionIds: [] } };
+const result: AnalysisResult = { context: { revision: "abc", requirements: [], drivers: [], evidence: [], recommendations: [], decisions: [], artifacts: [], links: [], status: { value: "DRAFT", requiredDecisionIds: [], approvedDecisionIds: [] } }, findings: [], risks: [], artifacts: [], packageStatus: { value: "DRAFT", requiredDecisionIds: [], approvedDecisionIds: [] } };
 describe("SQLite persistence", () => {
   it("round-trips analyses, decisions and audit entries after reopen", async () => {
     let store = DatabaseStore.open(path);

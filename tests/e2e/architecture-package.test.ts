@@ -21,7 +21,7 @@ describe("Architecture AI vertical slice", () => {
     expect(result.context.revision).toBe(revision);
     expect(result.context.requirements.length).toBeGreaterThan(2);
     expect(result.context.links.length).toBeGreaterThan(0);
-    expect(result.packageStatus.value).toBe("DRAFT");
+    expect(result.packageStatus.value).toBe("INCOMPLETE");
     const output = await new FilePackageRenderer().renderPackage(result, await mkdtemp(join(tmpdir(), "architecture-package-")));
     expect(output.files).toContain("architecture-context.json");
     expect(output.files).toContain("diagrams/integration-view.mmd");

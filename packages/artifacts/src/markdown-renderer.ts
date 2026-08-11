@@ -4,7 +4,7 @@ export function renderMarkdown(result: AnalysisResult): Record<string, string> {
   const evidence = ctx.evidence.map((item) => `- ${item.id}: ${item.sourcePath ?? "model suggestion"} @ ${item.revision ?? "unversioned"} (${item.classification})`).join("\n");
   const links = ctx.links.map((link) => `| ${link.fromId} | ${link.kind} | ${link.toId} |`).join("\n");
   return {
-    "01-architecture-analysis.md": `# Architecture Analysis\n\nStatus: ${ctx.status.value}\n\n## Findings\n${result.findings.map((finding) => `- ${finding}`).join("\n")}\n\n## Evidence\n${evidence}\n`,
+    "01-architecture-analysis.md": `# Architecture Analysis\n\nStatus: ${ctx.status.value}\n${ctx.status.diagnostics?.length ? `\n## Diagnostics\n${ctx.status.diagnostics.map((diagnostic) => `- ${diagnostic}`).join("\n")}\n` : ""}\n## Findings\n${result.findings.map((finding) => `- ${finding}`).join("\n")}\n\n## Recommendations\n${ctx.recommendations.map((recommendation) => `- ${recommendation.id}: ${recommendation.title} — ${recommendation.rationale}`).join("\n")}\n\n## Evidence\n${evidence}\n`,
     "02-architecture-drivers.md": `# Architecture Drivers\n\n${ctx.drivers.map((driver) => `## ${driver.id}: ${driver.title}\n${driver.description}\n\nRequirements: ${driver.sourceRequirementIds.join(", ")}`).join("\n\n")}\n`,
     "03-solution-architecture.md": `# Solution Architecture\n\nApplication and integration capabilities are designed from the retrieved evidence.\n\nTraceability references: ${ctx.decisions.map((decision) => decision.id).join(", ")}\n`,
     "04-data-architecture.md": `# Data Architecture\n\nData ownership is explicit and shared mutable tables are avoided.\n`,

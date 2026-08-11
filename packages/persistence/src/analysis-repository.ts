@@ -32,5 +32,11 @@ export class AnalysisRepository {
     const response = this.store.database.prepare("UPDATE analyses SET result_json = ?, status = ?, updated_at = ? WHERE id = ?").run(JSON.stringify(result), result.packageStatus.value, now, id);
     if (Number(response.changes) !== 1) throw new Error(`Analysis not found: ${id}`);
   }
+  async updatePackageStatus(id: string, status: AnalysisResult["packageStatus"]["value"]): Promise<void> {
+    const record = await this.get(id);
+    if (!record?.result) return;
+    const result = { ...record.result, packageStatus: { ...record.result.packageStatus, value: status }, context: { ...record.result.context, status: { ...record.result.context.status, value: status } } };
+    await this.updateResult(id, result);
+  }
   private map(row: Record<string, unknown>): AnalysisRecord { return { id: String(row.id), requirements: String(row.requirements), knowledgeRevision: String(row.knowledge_revision), status: String(row.status), result: row.result_json ? JSON.parse(String(row.result_json)) as AnalysisResult : undefined, createdAt: String(row.created_at), updatedAt: String(row.updated_at) }; }
 }

@@ -111,6 +111,9 @@ importers:
       '@architecture-ai/domain':
         specifier: workspace:*
         version: link:../domain
+      '@architecture-ai/knowledge':
+        specifier: workspace:^
+        version: link:../knowledge
       '@architecture-ai/orchestrator':
         specifier: workspace:*
         version: link:../orchestrator

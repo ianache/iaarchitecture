@@ -81,3 +81,12 @@ pnpm typecheck
 ```
 
 Las recomendaciones sin evidencia corporativa suficiente se mantienen como recomendaciones que requieren revisión humana; nunca se convierten silenciosamente en conocimiento aprobado.
+
+## Gobernanza de Conocimiento
+
+Al crear o modificar conocimiento:
+- **Metadatos OKF**: Los archivos de conocimiento deben tener frontmatter OKF válido; si es inválido, el sistema rechaza su uso con `INVALID_OKF_METADATA`.
+- **Propuestas Estándar**: Las nuevas guías y estándares se proponen y evalúan bajo `PENDING_REVIEW` u otro estado según el nivel.
+- **Publicación Aislada**: La publicación exitosa (`POST /packages/:id/publish`) ocurre en una rama Git o worktree aislados y no modifica la rama activa por defecto.
+- **Aislamiento de Revisiones**: Un nuevo documento o estándar publicado no se recuperará automáticamente con `HEAD` hasta que su revisión Git específica se seleccione explícitamente o se integre (merge) en la rama principal.
+- **Publicación sin Aprobación**: Intentar publicar antes de la aprobación (`publish-before-approval`) está estrictamente prohibido por la API y bloqueará la transición.

@@ -14,6 +14,7 @@ interface PackageReadService { get(id: string): Promise<AnalysisResult>; }
 export interface ApiDependencies { orchestrator: ArchitectureOrchestrator; knowledgeRevision?: string; analysisRepository?: AnalysisRepository; reviewRepository?: ReviewRepository; analysisService?: AnalysisService; packageService?: PackageService & PackageReadService; governanceService?: GovernanceService; publicationService?: PublicationService; knowledgeChangeRequestService?: KnowledgeChangeRequestService; }
 
 const knowledgeChangeRequestInputSchema = z.object({
+  author: z.string().min(1).default("human"),
   document: z.any(), // Or more specific if available
   baseRevision: z.string().min(1),
   targetPath: z.string().min(1),
@@ -57,7 +58,7 @@ export function buildApp(dependencies: ApiDependencies): FastifyInstance {
     app.post("/knowledge-change-requests", async (request, reply) => {
       const parsed = knowledgeChangeRequestInputSchema.safeParse(request.body);
       if (!parsed.success) return reply.code(400).send({ code: "INVALID_REQUEST", issues: parsed.error.issues });
-      try { return reply.code(201).send(await knowledgeChangeRequestService.create(parsed.data)); } catch (error) { const response = errorResponse(error); return reply.code(response.status).send(response.body); }
+      try { return reply.code(201).send(await knowledgeChangeRequestService.create(parsed.data as any)); } catch (error) { const response = errorResponse(error); return reply.code(response.status).send(response.body); }
     });
     app.get("/knowledge-change-requests", async (_request, reply) => {
       try { return reply.send(await knowledgeChangeRequestService.list()); } catch (error) { const response = errorResponse(error); return reply.code(response.status).send(response.body); }

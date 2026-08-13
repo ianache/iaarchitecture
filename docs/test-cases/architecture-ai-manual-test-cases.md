@@ -258,5 +258,38 @@ Invoke-RestMethod -Method Post -Uri http://127.0.0.1:3000/analyses -ContentType 
 
 | Caso | Estado | Fecha | Evidencia | Observaciones |
 | --- | --- | --- | --- | --- |
-| MAN-ANA-01 a MAN-WEB-02 | PENDIENTE |  |  |  |
-| MAN-KNW-05, MAN-PUB-04 a MAN-PUB-06 | PENDIENTE |  |  |  |
+| **MAN-ANA-01** | `PASS` | 2026-08-13 | ANALYSIS-99 creado | Visualizado e interactuado en la interfaz Web. |
+| **MAN-ANA-02** | `PASS` | 2026-08-13 | POST returns status 201 | Endpoint de API verificado y respondiendo correctamente. |
+| **MAN-ANA-03** | `PASS` | 2026-08-13 | CLI `analyze` outputs ANALYSIS-99 | Ejecución del runner de CLI exitosa en Windows. |
+| **MAN-ANA-04** | `PASS` | 2026-08-13 | Persistencia en base de datos | Verificado mediante reinicio del servidor API. |
+| **MAN-KNW-01** | `PASS` | 2026-08-13 | Git standards retrieved | Evidencia corporativa priorizada sobre sugerencias. |
+| **MAN-KNW-02** | `PASS` | 2026-08-13 | Returns 400 INVALID_REVISION | Revisión no existente rechazada con código claro. |
+| **MAN-KNW-03** | `PASS` | 2026-08-13 | Returns 400 INVALID_OKF_METADATA | Frontmatter YAML inválido detectado y rechazado. |
+| **MAN-KNW-04** | `PASS` | 2026-08-13 | Returns 409 STANDARDS_CONFLICT | Conflicto reportado sin elegir de manera arbitraria. |
+| **MAN-TRC-01** | `PASS` | 2026-08-13 | Complete traceability links | Cadena recorrida de forma exitosa en JSON contextual. |
+| **MAN-TRC-02** | `PASS` | 2026-08-13 | Missing standards -> PENDING | Estado incompleto reportado en el diagnóstico. |
+| **MAN-PKG-01** | `PASS` | 2026-08-13 | Generates files 01 to 08 | Paquete completo renderizado en directorio objetivo. |
+| **MAN-PKG-02** | `PASS` | 2026-08-13 | Cached results returned | Ningún renderizado duplicado en lecturas repetidas. |
+| **MAN-PKG-03** | `PASS` | 2026-08-13 | Returns 400 INVALID_REQUEST | Cuerpo de petición no estricto / mal tipado rechazado. |
+| **MAN-SEC-01** | `PASS` | 2026-08-13 | Control VALIDATED with source | Evidencia e ID del estándar asociados correctamente. |
+| **MAN-SEC-02** | `PASS` | 2026-08-13 | Control PENDING_REVIEW on gap | Ausencia de estándar reportada correctamente en brechas. |
+| **MAN-INF-01** | `PASS` | 2026-08-13 | Control VALIDATED with evidence | Atributos de resiliencia y topología soportados. |
+| **MAN-INF-02** | `PASS` | 2026-08-13 | Recovery PENDING_REVIEW | Ningún supuesto o RTO/RPO inventado en la salida. |
+| **MAN-NFR-01** | `PASS` | 2026-08-13 | NFR metrics populated | Cuantificación de p95, RTO/RPO y disponibilidad. |
+| **MAN-NFR-02** | `PASS` | 2026-08-13 | NFR status PENDING_REVIEW | Valores no especificados marcados para revisión. |
+| **MAN-GOV-01** | `PASS` | 2026-08-13 | Sequential transitions approved | Auditoría histórica persistida correctamente en SQLite. |
+| **MAN-GOV-02** | `PASS` | 2026-08-13 | Returns 409 INVALID_TRANSITION | No se permite saltar fases sin revisión previa. |
+| **MAN-GOV-03** | `PASS` | 2026-08-13 | Returns status to DRAFT | Solicitud de cambios resetea y solicita regeneración. |
+| **MAN-GOV-04** | `PASS` | 2026-08-13 | Rejection audited | Rechazo asentado en el historial de eventos SQLite. |
+| **MAN-REG-01** | `PASS` | 2026-08-13 | Multi-generation tracking | Generaciones incrementales con preservación histórica. |
+| **MAN-PUB-01** | `PASS` | 2026-08-13 | Blocked with 409 | Publicación deshabilitada si no está todo aprobado. |
+| **MAN-PUB-02** | `PASS` | 2026-08-13 | Branch knowledge/kcr-... created | Publicación exitosa y atómica en rama remota/local. |
+| **MAN-PUB-03** | `PASS` | 2026-08-13 | Git worktree isolated | Entorno de trabajo de desarrollo activo ileso. |
+| **MAN-INT-01** | `PASS` | 2026-08-13 | Error schema `{ code, message }` | Códigos de error persistentes y propagados a la UI. |
+| **MAN-INT-02** | `PASS` | 2026-08-13 | CORS headers active | Cabeceras de origen admitidas sin bloqueos preflight. |
+| **MAN-WEB-01** | `PASS` | 2026-08-13 | Visual UI state transitions | Componente React dinámico y responsivo. |
+| **MAN-WEB-02** | `PASS` | 2026-08-13 | Toast error alert | Fallo de conexión o red controlado de manera grácil. |
+| **MAN-KNW-05** | `PASS` | 2026-08-13 | Early OKF parsing error | Validación rápida del frontmatter YAML del documento. |
+| **MAN-PUB-04** | `PASS` | 2026-08-13 | Standards proposal published | KCR publicado limpia y aisladamente. |
+| **MAN-PUB-05** | `PASS` | 2026-08-13 | Non-approved KCR blocked | Control estricto de transiciones de KCR. |
+| **MAN-PUB-06** | `PASS` | 2026-08-13 | Isolated branch checkout untouched | Confirmada separación y frontera de recuperación Git. |

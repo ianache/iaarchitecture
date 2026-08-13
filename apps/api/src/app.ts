@@ -66,6 +66,14 @@ export function buildApp(dependencies: ApiDependencies): FastifyInstance {
     app.get<{ Params: { id: string } }>("/knowledge-change-requests/:id", async (request, reply) => {
       try { return reply.send(await knowledgeChangeRequestService.get(request.params.id)); } catch (error) { const response = errorResponse(error); return reply.code(response.status).send(response.body); }
     });
+    app.get<{ Params: { id: string } }>("/knowledge-change-requests/:id/audit", async (request, reply) => {
+      try {
+        return reply.send({ events: await knowledgeChangeRequestService.listAudit(request.params.id) });
+      } catch (error) {
+        const response = errorResponse(error);
+        return reply.code(response.status).send(response.body);
+      }
+    });
     app.post<{ Params: { id: string } }>("/knowledge-change-requests/:id/review", async (request, reply) => {
       const parsed = reviewSchema.safeParse(request.body ?? {});
       if (!parsed.success) return reply.code(400).send({ code: "INVALID_REQUEST", issues: parsed.error.issues });

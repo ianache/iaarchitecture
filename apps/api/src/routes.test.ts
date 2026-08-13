@@ -78,4 +78,23 @@ describe("knowledge change request routes", () => {
     
     await app.close();
   });
+
+  it("retrieves audit history for a knowledge change request", async () => {
+    const auditEvents = [
+      { id: "REV-1", changeRequestId: "KCR-1", reviewerId: "user-1", decision: "APPROVED", comments: "Looks good", reviewedAt: "2026-08-13T00:00:00.000Z" }
+    ];
+    const knowledgeChangeRequestService = {
+      listAudit: async (id: string) => {
+        if (id === "KCR-1") return auditEvents;
+        throw new ApplicationError("KNOWLEDGE_CHANGE_REQUEST_NOT_FOUND", "Request not found");
+      }
+    } as unknown as any;
+    const app = buildApp({ orchestrator, knowledgeChangeRequestService });
+
+    const response = await app.inject({ method: "GET", url: "/knowledge-change-requests/KCR-1/audit" });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ events: auditEvents });
+
+    await app.close();
+  });
 });

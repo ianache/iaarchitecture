@@ -1,4 +1,4 @@
-import type { GitWorkspace, KnowledgeChangeRequestRepository, KnowledgeChangeRequest, KnowledgeChangeRequestInput } from "@architecture-ai/domain";
+import type { GitWorkspace, KnowledgeChangeRequestRepository, KnowledgeChangeRequest, KnowledgeChangeRequestInput, KnowledgeChangeReview } from "@architecture-ai/domain";
 import { ApplicationError } from "./errors.js";
 import { parseKnowledgeDocument } from "@architecture-ai/knowledge";
 
@@ -21,6 +21,10 @@ export class KnowledgeChangeRequestService {
     private readonly repository: KnowledgeChangeRequestRepository,
     private readonly workspace: GitWorkspace
   ) {}
+
+  async listAudit(id: string): Promise<KnowledgeChangeReview[]> {
+    return this.repository.listAudit(id);
+  }
 
   async create(input: KnowledgeChangeRequestInput): Promise<KnowledgeChangeRequest> {
     const id = this.repository.nextId();

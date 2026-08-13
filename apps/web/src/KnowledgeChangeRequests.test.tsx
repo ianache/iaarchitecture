@@ -36,8 +36,21 @@ describe("KnowledgeChangeRequests", () => {
     // Click "Create draft"
     fireEvent.click(screen.getByRole("button", { name: "Create draft" }));
 
-    // Check detail view for reviewer action fields and audit timeline list
-    await waitFor(() => expect(screen.getByRole("button", { name: "Review" })).toBeInTheDocument());
+    // Check detail view for reviewer action fields
+    await waitFor(() => expect(screen.getByRole("button", { name: "Submit Review" })).toBeInTheDocument());
+
+    const reviewerInput = screen.getByLabelText(/Reviewer Name/i);
+    const actionSelect = screen.getByLabelText(/Action/i);
+    const commentArea = screen.getByLabelText(/Comment/i);
+
+    fireEvent.change(reviewerInput, { target: { value: "alice" } });
+    fireEvent.change(actionSelect, { target: { value: "COMMENT" } });
+    fireEvent.change(commentArea, { target: { value: "Looks good" } });
+    fireEvent.click(screen.getByRole("button", { name: "Submit Review" }));
+
+    await waitFor(() => {
+      expect(client.reviewKcr).toHaveBeenCalledWith("KCR-1", "alice");
+    });
     
     // Check timeline list
     expect(screen.getByText(/CREATED/i)).toBeInTheDocument();

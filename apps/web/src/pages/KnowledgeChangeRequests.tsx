@@ -101,19 +101,19 @@ export function KnowledgeChangeRequests({ client, onBack }: Props) {
   }
 
   if (screen === "detail" && request) {
-    const review = async (id: string) => {
+    const review = async (id: string, reviewer: string) => {
       try {
         setError(undefined);
-        await client.reviewKcr(id, "web-user");
+        await client.reviewKcr(id, reviewer);
         await loadDetail(id);
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
       }
     };
-    const approve = async (id: string) => {
+    const approve = async (id: string, reviewer: string) => {
       try {
         setError(undefined);
-        await client.approveKcr(id, "web-user");
+        await client.approveKcr(id, reviewer);
         await loadDetail(id);
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
@@ -137,8 +137,26 @@ export function KnowledgeChangeRequests({ client, onBack }: Props) {
           <p>Status: <span className={`badge badge-${request.status.toLowerCase()}`}>{request.status}</span></p>
           <p>Title: {request.document?.title}</p>
           
-          {request.status === "DRAFT" && <button onClick={() => void review(request.id)}>Review</button>}
-          {request.status === "REVIEWED" && <button onClick={() => void approve(request.id)}>Approve</button>}
+          {(request.status === "DRAFT" || request.status === "REVIEWED") && (
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const fd = new FormData(e.currentTarget);
+              const action = fd.get("action") as string;
+              const reviewer = fd.get("reviewer") as string;
+              if (action === "COMMENT") void review(request.id, reviewer);
+              else if (action === "APPROVE") void approve(request.id, reviewer);
+            }}>
+              <label>Reviewer Name <input name="reviewer" required /></label>
+              <label>Action 
+                <select name="action">
+                  <option value="COMMENT">COMMENT</option>
+                  <option value="APPROVE">APPROVE</option>
+                </select>
+              </label>
+              <label>Comment <textarea name="comment" /></label>
+              <button type="submit">Submit Review</button>
+            </form>
+          )}
           {request.status === "APPROVED" && <button onClick={() => void publish(request.id)}>Publish</button>}
           
           <button onClick={() => { setScreen("list"); void loadList(); }}>Back to List</button>

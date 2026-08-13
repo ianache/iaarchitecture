@@ -176,12 +176,16 @@ describe("Knowledge Authoring Workspace", () => {
       fireEvent.click(screen.getByRole("button", { name: "Create draft" }));
 
       // Review
-      await waitFor(() => expect(screen.getByRole("button", { name: "Review" })).toBeInTheDocument());
-      fireEvent.click(screen.getByRole("button", { name: "Review" }));
+      await waitFor(() => expect(screen.getByRole("textbox", { name: "Reviewer Name" })).toBeInTheDocument());
+      fireEvent.change(screen.getByRole("textbox", { name: "Reviewer Name" }), { target: { value: "Reviewer A" } });
+      fireEvent.change(screen.getByRole("combobox", { name: "Action" }), { target: { value: "COMMENT" } });
+      fireEvent.click(screen.getByRole("button", { name: "Submit Review" }));
 
       // Approve
-      await waitFor(() => expect(screen.getByRole("button", { name: "Approve" })).toBeInTheDocument());
-      fireEvent.click(screen.getByRole("button", { name: "Approve" }));
+      await waitFor(() => expect(screen.getByRole("textbox", { name: "Reviewer Name" })).toBeInTheDocument());
+      fireEvent.change(screen.getByRole("textbox", { name: "Reviewer Name" }), { target: { value: "Reviewer B" } });
+      fireEvent.change(screen.getByRole("combobox", { name: "Action" }), { target: { value: "APPROVE" } });
+      fireEvent.click(screen.getByRole("button", { name: "Submit Review" }));
 
       // Publish
       await waitFor(() => expect(screen.getByRole("button", { name: "Publish" })).toBeInTheDocument());
@@ -229,7 +233,7 @@ describe("Knowledge Authoring Workspace", () => {
       // Test Publish Failure
       await waitFor(() => expect(screen.getByRole("button", { name: "View" })).toBeInTheDocument());
       fireEvent.click(screen.getByRole("button", { name: "View" }));
-      await waitFor(() => expect(screen.getByText("Status: APPROVED")).toBeInTheDocument());
+      await waitFor(() => expect(screen.getByText("APPROVED")).toBeInTheDocument());
       await waitFor(() => expect(screen.getByRole("button", { name: "Publish" })).toBeInTheDocument());
       fireEvent.click(screen.getByRole("button", { name: "Publish" }));
       await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("INVALID_STATUS: KCR must be APPROVED"));

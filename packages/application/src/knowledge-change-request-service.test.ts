@@ -72,7 +72,7 @@ describe("KnowledgeChangeRequestService", () => {
   it("publishes an approved request successfully", async () => {
     const request = {
       id: "KCR-1",
-      status: "APPROVED",
+      status: "DRAFT",
       author: "dev",
       baseRevision: "HEAD",
       targetPath: "knowledge/standards/mfa-standard.md",

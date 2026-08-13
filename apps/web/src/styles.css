@@ -1,1 +1,19 @@
 :root { font-family: Inter, system-ui, sans-serif; color: #172033; background: #f5f7fb; } body { margin: 0; } main, form, section { max-width: 960px; margin: 2rem auto; padding: 1.5rem; background: white; border-radius: 12px; box-shadow: 0 4px 18px #17203312; } textarea { display: block; width: 100%; min-height: 180px; margin: .5rem 0 1rem; } input { display: block; margin: .5rem 0 1rem; padding: .5rem; } button { margin: .25rem; padding: .5rem .8rem; cursor: pointer; } table { width: 100%; border-collapse: collapse; } td, th { border-bottom: 1px solid #dde3ef; padding: .6rem; text-align: left; } .page-heading { display: flex; justify-content: space-between; align-items: center; gap: 1rem; } .page-heading h1, .page-heading p { margin: 0; } .page-heading p { margin-top: .35rem; color: #5d6b82; }
+
+/* KCR Grid */
+.kcr-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 2rem; }
+
+/* Badges */
+.badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
+.badge-draft { background: #e0e0e0; color: #333; }
+.badge-reviewed { background: #bbdefb; color: #0d47a1; }
+.badge-approved { background: #c8e6c9; color: #1b5e20; }
+.badge-published { background: #e1bee7; color: #4a148c; }
+
+/* Timeline */
+.timeline { border-left: 2px solid #dde3ef; padding-left: 1rem; margin-top: 1rem; }
+.timeline-item { margin-bottom: 1.5rem; position: relative; }
+
+/* Markdown Reader Box */
+.markdown-reader { background: #fafafa; border: 1px solid #eee; border-radius: 8px; padding: 1rem; overflow-y: auto; max-height: 600px; }
+.markdown-reader pre { white-space: pre-wrap; font-family: inherit; }

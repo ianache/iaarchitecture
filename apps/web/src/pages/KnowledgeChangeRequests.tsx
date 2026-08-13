@@ -12,6 +12,15 @@ export function KnowledgeChangeRequests({ client, onBack }: Props) {
   const [request, setRequest] = useState<any>();
   const [error, setError] = useState<string>();
 
+  const [key, setKey] = useState("");
+  const [category, setCategory] = useState("standards");
+  const [targetPath, setTargetPath] = useState("knowledge/standards/");
+  const [auditEvents, setAuditEvents] = useState<any[]>([]);
+
+  useEffect(() => {
+    setTargetPath(`knowledge/${category}/${key || "document"}.md`);
+  }, [key, category]);
+
   async function loadList() {
     try {
       setError(undefined);
@@ -28,6 +37,8 @@ export function KnowledgeChangeRequests({ client, onBack }: Props) {
       const res = await client.getKcr(id);
       setRequest(res);
       setScreen("detail");
+      const auditRes = await client.getKcrAudit(id);
+      setAuditEvents(auditRes.events || []);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -50,7 +61,7 @@ export function KnowledgeChangeRequests({ client, onBack }: Props) {
               category: fd.get("category"),
               author: fd.get("author"),
               baseRevision: fd.get("baseRevision"),
-              targetPath: "TBD", // Simplification
+              targetPath: targetPath,
               document: {
                 key: fd.get("key"),
                 title: fd.get("title"),
@@ -71,8 +82,9 @@ export function KnowledgeChangeRequests({ client, onBack }: Props) {
             })();
           }}
         >
-          <label>Category <input name="category" defaultValue="standards" /></label>
-          <label>Key <input name="key" /></label>
+          <label>Category <input name="category" value={category} onChange={e => setCategory(e.target.value)} /></label>
+          <label>Key <input name="key" value={key} onChange={e => setKey(e.target.value)} /></label>
+          <label>Target Path <input name="targetPath" value={targetPath} readOnly /></label>
           <label>Title <input name="title" /></label>
           <label>Summary <input name="summary" /></label>
           <label>Classification <input name="classification" defaultValue="STANDARD" /></label>
@@ -118,17 +130,32 @@ export function KnowledgeChangeRequests({ client, onBack }: Props) {
     };
 
     return (
-      <div>
-        <h2>Knowledge Change Request: {request.id}</h2>
-        {error && <p role="alert">{error}</p>}
-        <p>Status: {request.status}</p>
-        <p>Title: {request.document?.title}</p>
-        
-        {request.status === "DRAFT" && <button onClick={() => void review(request.id)}>Review</button>}
-        {request.status === "REVIEWED" && <button onClick={() => void approve(request.id)}>Approve</button>}
-        {request.status === "APPROVED" && <button onClick={() => void publish(request.id)}>Publish</button>}
-        
-        <button onClick={() => { setScreen("list"); void loadList(); }}>Back to List</button>
+      <div className="kcr-grid">
+        <div>
+          <h2>Knowledge Change Request: {request.id}</h2>
+          {error && <p role="alert">{error}</p>}
+          <p>Status: <span className={`badge badge-${request.status.toLowerCase()}`}>{request.status}</span></p>
+          <p>Title: {request.document?.title}</p>
+          
+          {request.status === "DRAFT" && <button onClick={() => void review(request.id)}>Review</button>}
+          {request.status === "REVIEWED" && <button onClick={() => void approve(request.id)}>Approve</button>}
+          {request.status === "APPROVED" && <button onClick={() => void publish(request.id)}>Publish</button>}
+          
+          <button onClick={() => { setScreen("list"); void loadList(); }}>Back to List</button>
+          
+          <div className="timeline">
+            <h3>Audit Timeline</h3>
+            {auditEvents.map((evt, idx) => (
+              <div key={idx} className="timeline-item">
+                <strong>{evt.action}</strong> by {evt.actor} at {new Date(evt.timestamp).toLocaleString()}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="markdown-reader">
+          <h3>Document Preview</h3>
+          <pre>{request.document?.content || "No content"}</pre>
+        </div>
       </div>
     );
   }

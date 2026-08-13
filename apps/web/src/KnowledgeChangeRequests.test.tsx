@@ -15,7 +15,7 @@ describe("KnowledgeChangeRequests", () => {
       getKcr: vi.fn().mockResolvedValue({ id: "KCR-1", status: "DRAFT", category: "standards", author: "test", baseRevision: "abc", document: { title: "Test" } }),
       reviewKcr: vi.fn().mockResolvedValue({}),
       approveKcr: vi.fn().mockResolvedValue({}),
-      getKcrAudit: vi.fn().mockResolvedValue({ events: [] }),
+      getKcrAudit: vi.fn().mockResolvedValue({ events: [{ timestamp: new Date().toISOString(), actor: "test", action: "CREATED" }] }),
     } as unknown as ApiClient;
 
     render(<KnowledgeChangeRequests client={client} onBack={vi.fn()} />);
@@ -23,9 +23,23 @@ describe("KnowledgeChangeRequests", () => {
     // Click "New knowledge proposal"
     fireEvent.click(await screen.findByRole("button", { name: "New knowledge proposal" }));
 
+    // Check target path suggestion
+    const categoryInput = screen.getByLabelText(/Category/i);
+    const keyInput = screen.getByLabelText(/Key/i);
+    const targetPathInput = screen.getByLabelText(/Target Path/i);
+
+    fireEvent.change(categoryInput, { target: { value: "guides" } });
+    fireEvent.change(keyInput, { target: { value: "my-guide" } });
+
+    expect(targetPathInput).toHaveValue("knowledge/guides/my-guide.md");
+
     // Click "Create draft"
     fireEvent.click(screen.getByRole("button", { name: "Create draft" }));
 
+    // Check detail view for reviewer action fields and audit timeline list
     await waitFor(() => expect(screen.getByRole("button", { name: "Review" })).toBeInTheDocument());
+    
+    // Check timeline list
+    expect(screen.getByText(/CREATED/i)).toBeInTheDocument();
   });
 });

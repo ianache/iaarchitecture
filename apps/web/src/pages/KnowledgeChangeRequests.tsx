@@ -101,19 +101,19 @@ export function KnowledgeChangeRequests({ client, onBack }: Props) {
   }
 
   if (screen === "detail" && request) {
-    const review = async (id: string, reviewer: string) => {
+    const review = async (id: string, reviewer: string, comment?: string) => {
       try {
         setError(undefined);
-        await client.reviewKcr(id, reviewer);
+        await client.reviewKcr(id, reviewer, comment);
         await loadDetail(id);
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
       }
     };
-    const approve = async (id: string, reviewer: string) => {
+    const approve = async (id: string, reviewer: string, comment?: string) => {
       try {
         setError(undefined);
-        await client.approveKcr(id, reviewer);
+        await client.approveKcr(id, reviewer, comment);
         await loadDetail(id);
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
@@ -143,8 +143,9 @@ export function KnowledgeChangeRequests({ client, onBack }: Props) {
               const fd = new FormData(e.currentTarget);
               const action = fd.get("action") as string;
               const reviewer = fd.get("reviewer") as string;
-              if (action === "COMMENT") void review(request.id, reviewer);
-              else if (action === "APPROVE") void approve(request.id, reviewer);
+              const comment = fd.get("comment") as string;
+              if (action === "COMMENT") void review(request.id, reviewer, comment);
+              else if (action === "APPROVE") void approve(request.id, reviewer, comment);
             }}>
               <label>Reviewer Name <input name="reviewer" required /></label>
               <label>Action 

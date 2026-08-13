@@ -49,7 +49,7 @@ describe("KnowledgeChangeRequests", () => {
     fireEvent.click(screen.getByRole("button", { name: "Submit Review" }));
 
     await waitFor(() => {
-      expect(client.reviewKcr).toHaveBeenCalledWith("KCR-1", "alice");
+      expect(client.reviewKcr).toHaveBeenCalledWith("KCR-1", "alice", "Looks good");
     });
     
     // Check timeline list

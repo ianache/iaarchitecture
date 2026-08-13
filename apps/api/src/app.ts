@@ -2,7 +2,7 @@ import Fastify, { type FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { AnalysisResult, ArchitectureModel, EvidenceRetriever } from "@architecture-ai/domain";
 import { FilePackageRenderer } from "@architecture-ai/artifacts";
-import { AnalysisService, ApplicationError, GovernanceService, PackageService, PublicationService } from "@architecture-ai/application";
+import { AnalysisService, ApplicationError, GovernanceService, PackageService, PublicationService, KnowledgeChangeRequestService } from "@architecture-ai/application";
 import { LocalGitWorkspace } from "@architecture-ai/governance";
 import { ArchitectureOrchestrator } from "@architecture-ai/orchestrator";
 import { AnalysisRepository, DatabaseStore, ReviewRepository } from "@architecture-ai/persistence";
@@ -11,11 +11,20 @@ const requestSchema = z.object({ requirements: z.string().min(1), knowledgeRevis
 const reviewSchema = z.object({ reviewer: z.string().min(1).default("human"), comment: z.string().optional() });
 const packageGenerationSchema = z.object({ outputDirectory: z.string().min(1).optional() }).strict();
 interface PackageReadService { get(id: string): Promise<AnalysisResult>; }
-export interface ApiDependencies { orchestrator: ArchitectureOrchestrator; knowledgeRevision?: string; analysisRepository?: AnalysisRepository; reviewRepository?: ReviewRepository; analysisService?: AnalysisService; packageService?: PackageService & PackageReadService; governanceService?: GovernanceService; publicationService?: PublicationService; }
+export interface ApiDependencies { orchestrator: ArchitectureOrchestrator; knowledgeRevision?: string; analysisRepository?: AnalysisRepository; reviewRepository?: ReviewRepository; analysisService?: AnalysisService; packageService?: PackageService & PackageReadService; governanceService?: GovernanceService; publicationService?: PublicationService; knowledgeChangeRequestService?: KnowledgeChangeRequestService; }
+
+const knowledgeChangeRequestInputSchema = z.object({
+  document: z.any(), // Or more specific if available
+  baseRevision: z.string().min(1),
+  targetPath: z.string().min(1),
+  category: z.string().min(1)
+});
+
+const publishSchema = z.object({ branch: z.string().optional() });
 
 function errorResponse(error: unknown): { status: number; body: { code: string; message: string } } {
-  if (error instanceof ApplicationError) { const code = error.code as string; return { status: code === "NOT_FOUND" ? 404 : code === "INVALID_REVISION" || code === "INVALID_OKF_METADATA" ? 400 : code === "INVALID_REVIEW_TRANSITION" || code === "PACKAGE_NOT_READY" || code === "INVALID_PACKAGE_STATUS" || code === "STANDARDS_CONFLICT" ? 409 : code === "INSUFFICIENT_EVIDENCE" || code === "TRACEABILITY_INCOMPLETE" ? 422 : 500, body: { code: error.code, message: error.message } }; }
-  return { status: 500, body: { code: "PACKAGE_GENERATION_FAILED", message: error instanceof Error ? error.message : "Request failed" } };
+  if (error instanceof ApplicationError) { const code = error.code as string; return { status: code === "NOT_FOUND" ? 404 : code === "INVALID_REVISION" || code === "INVALID_OKF_METADATA" || code === "INVALID_REQUEST" ? 400 : code === "INVALID_REVIEW_TRANSITION" || code === "PACKAGE_NOT_READY" || code === "INVALID_PACKAGE_STATUS" || code === "STANDARDS_CONFLICT" || code === "INVALID_KNOWLEDGE_CHANGE_TRANSITION" ? 409 : code === "INSUFFICIENT_EVIDENCE" || code === "TRACEABILITY_INCOMPLETE" ? 422 : 500, body: { code: error.code, message: error.message } }; }
+  return { status: 500, body: { code: "INTERNAL_ERROR", message: error instanceof Error ? error.message : "Request failed" } };
 }
 
 export function buildApp(dependencies: ApiDependencies): FastifyInstance {
@@ -42,6 +51,37 @@ export function buildApp(dependencies: ApiDependencies): FastifyInstance {
   app.post<{ Params: { id: string }; Body: unknown }>("/packages/:id/publish", async (request, reply) => { const body = z.object({ branch: z.string().min(1).regex(/^[A-Za-z0-9._/-]+$/).optional() }).strict().safeParse(request.body ?? {}); if (!body.success) return reply.code(400).send({ code: "INVALID_REQUEST", issues: body.error.issues }); try { return reply.code(201).send(await publicationService.publish(request.params.id, body.data.branch)); } catch (error) { const response = errorResponse(error); return reply.code(response.status).send(response.body); } });
   app.post<{ Params: { id: string; action: string }; Body: unknown }>("/decisions/:id/:action", async (request, reply) => { const action = request.params.action.toLowerCase(); if (!["review", "approve", "reject", "request-changes"].includes(action)) return reply.code(400).send({ code: "INVALID_REQUEST" }); const parsed = reviewSchema.safeParse(request.body ?? {}); if (!parsed.success) return reply.code(400).send({ code: "INVALID_REQUEST", issues: parsed.error.issues }); try { const actionMethod = action === "request-changes" ? governanceService.requestChanges.bind(governanceService) : governanceService[action as "review" | "approve" | "reject"].bind(governanceService); const decision = await actionMethod(request.params.id, parsed.data.reviewer, parsed.data.comment); return { decision, review: (await governanceService.audit(request.params.id)).at(-1) }; } catch (error) { const response = errorResponse(error); return reply.code(response.status).send(response.body); } });
   app.get<{ Params: { id: string } }>("/decisions/:id/audit", async (request, reply) => { try { return { events: await governanceService.audit(request.params.id) }; } catch (error) { const response = errorResponse(error); return reply.code(response.status).send(response.body); } });
+
+  const { knowledgeChangeRequestService } = dependencies;
+  if (knowledgeChangeRequestService) {
+    app.post("/knowledge-change-requests", async (request, reply) => {
+      const parsed = knowledgeChangeRequestInputSchema.safeParse(request.body);
+      if (!parsed.success) return reply.code(400).send({ code: "INVALID_REQUEST", issues: parsed.error.issues });
+      try { return reply.code(201).send(await knowledgeChangeRequestService.create(parsed.data)); } catch (error) { const response = errorResponse(error); return reply.code(response.status).send(response.body); }
+    });
+    app.get("/knowledge-change-requests", async (_request, reply) => {
+      try { return reply.send(await knowledgeChangeRequestService.list()); } catch (error) { const response = errorResponse(error); return reply.code(response.status).send(response.body); }
+    });
+    app.get<{ Params: { id: string } }>("/knowledge-change-requests/:id", async (request, reply) => {
+      try { return reply.send(await knowledgeChangeRequestService.get(request.params.id)); } catch (error) { const response = errorResponse(error); return reply.code(response.status).send(response.body); }
+    });
+    app.post<{ Params: { id: string } }>("/knowledge-change-requests/:id/review", async (request, reply) => {
+      const parsed = reviewSchema.safeParse(request.body ?? {});
+      if (!parsed.success) return reply.code(400).send({ code: "INVALID_REQUEST", issues: parsed.error.issues });
+      try { return reply.send(await knowledgeChangeRequestService.review(request.params.id, parsed.data.reviewer, parsed.data.comment)); } catch (error) { const response = errorResponse(error); return reply.code(response.status).send(response.body); }
+    });
+    app.post<{ Params: { id: string } }>("/knowledge-change-requests/:id/approve", async (request, reply) => {
+      const parsed = reviewSchema.safeParse(request.body ?? {});
+      if (!parsed.success) return reply.code(400).send({ code: "INVALID_REQUEST", issues: parsed.error.issues });
+      try { return reply.send(await knowledgeChangeRequestService.approve(request.params.id, parsed.data.reviewer, parsed.data.comment)); } catch (error) { const response = errorResponse(error); return reply.code(response.status).send(response.body); }
+    });
+    app.post<{ Params: { id: string } }>("/knowledge-change-requests/:id/publish", async (request, reply) => {
+      const parsed = publishSchema.safeParse(request.body ?? {});
+      if (!parsed.success) return reply.code(400).send({ code: "INVALID_REQUEST", issues: parsed.error.issues });
+      try { return reply.send(await knowledgeChangeRequestService.publish(request.params.id, parsed.data.branch)); } catch (error) { const response = errorResponse(error); return reply.code(response.status).send(response.body); }
+    });
+  }
+
   return app;
 }
 

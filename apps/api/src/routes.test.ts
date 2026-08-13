@@ -63,3 +63,19 @@ describe("analysis regeneration route", () => {
     } finally { await app.close(); }
   });
 });
+
+describe("knowledge change request routes", () => {
+  it("creates and transitions knowledge change requests", async () => {
+    const knowledgeChangeRequestService = {
+      create: async () => ({ id: "KCR-1", status: "DRAFT" }),
+      publish: async () => { throw new ApplicationError("INVALID_KNOWLEDGE_CHANGE_TRANSITION", "Not approved"); }
+    } as unknown as any;
+    const app = buildApp({ orchestrator, knowledgeChangeRequestService });
+    
+    const validDraft = { document: { title: "Test", summary: "Test summary", type: "STANDARD", status: "DRAFT", key: "test-doc" }, baseRevision: "abc", targetPath: "docs/test.md", category: "standards" };
+    expect((await app.inject({ method: "POST", url: "/knowledge-change-requests", payload: validDraft })).statusCode).toBe(201);
+    expect((await app.inject({ method: "POST", url: "/knowledge-change-requests/KCR-1/publish" })).statusCode).toBe(409);
+    
+    await app.close();
+  });
+});

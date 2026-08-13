@@ -9,3 +9,9 @@ describe("CLI validation errors", () => {
     await expect(program.parseAsync(["node", "architecture-ai", "analyze", "--requirements", "Login", "--revision", "abc"])).rejects.toThrow("INSUFFICIENT_EVIDENCE: Human review is required");
   });
 });
+
+describe("knowledge change request commands", () => {
+  it("contains the knowledge-publish command", () => {
+    expect(createCli().commands.map((command) => command.name())).toContain("knowledge-publish");
+  });
+});

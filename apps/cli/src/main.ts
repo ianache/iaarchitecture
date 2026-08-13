@@ -25,4 +25,5 @@ export function createCli(): Command {
 
   return program;
 }
-if (import.meta.url === `file://${process.argv[1]}`) createCli().parseAsync().catch((error) => { console.error(error instanceof Error ? error.message : error); process.exitCode = 1; });
+import { fileURLToPath } from "url";
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) createCli().parseAsync().catch((error) => { console.error(error instanceof Error ? error.message : error); process.exitCode = 1; });

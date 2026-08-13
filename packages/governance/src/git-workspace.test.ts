@@ -17,3 +17,19 @@ it("creates and commits in an isolated worktree without switching the active che
   expect(prepared.branch).toBe("architecture-review"); expect(prepared.commit).toMatch(/^[0-9a-f]{40}$/);
   expect(await readFile(join(root, ".architecture-ai", "worktrees", "architecture-review", "packages/ANALYSIS-1/architecture-context.json"), "utf8")).toBe("{}\n");
 }, 15000);
+
+it("creates and commits knowledge documents in an isolated worktree", async () => {
+  const root = await mkdtemp(join(tmpdir(), "architecture-ai-git-"));
+  execFileSync("git", ["init", "-q", "-b", "main"], { cwd: root });
+  execFileSync("git", ["config", "user.email", "test@example.com"], { cwd: root }); execFileSync("git", ["config", "user.name", "Test"], { cwd: root });
+  await writeFile(join(root, "README.md"), "base\n"); execFileSync("git", ["add", "."], { cwd: root }); execFileSync("git", ["commit", "-qm", "base"], { cwd: root });
+  
+  const workspace = new LocalGitWorkspace(root);
+  await workspace.createBranch("knowledge/kcr-1", "HEAD");
+  await workspace.writeKnowledgeDocument("knowledge/standards/mfa-standard.md", "# MFA Standard\n");
+  
+  const prepared = await workspace.prepareKnowledgeReview("knowledge/standards/mfa-standard.md", "docs: publish KCR-1");
+  expect(prepared.branch).toBe("knowledge/kcr-1");
+  expect(prepared.commit).toMatch(/^[0-9a-f]{40}$/);
+  expect(await readFile(join(root, ".architecture-ai", "worktrees", "knowledge/kcr-1", "knowledge/standards/mfa-standard.md"), "utf8")).toBe("# MFA Standard\n");
+}, 15000);

@@ -42,7 +42,7 @@ export interface KnowledgeSource { readRevision(revision: string): Promise<Knowl
 export interface EvidenceRetriever { retrieve(input: RetrieveInput): Promise<RetrievedEvidence[]>; }
 export interface ArchitectureModel { complete(input: ModelRequest): Promise<ModelResponse>; }
 export interface PackageRenderer { renderPackage(result: AnalysisResult, outputDirectory: string): Promise<ArchitecturePackage>; }
-export interface GitWorkspace { createBranch(name: string, revision: string): Promise<string>; getWorkingDirectory(): string; writePackage(directory: string, files: Record<string, string>): Promise<void>; prepareReview(message: string): Promise<{ branch: string; commit?: string; }>; }
+export interface GitWorkspace { createBranch(name: string, revision: string): Promise<string>; getWorkingDirectory(): string; writePackage(directory: string, files: Record<string, string>): Promise<void>; prepareReview(message: string): Promise<{ branch: string; commit?: string; }>; writeKnowledgeDocument(targetPath: string, content: string): Promise<void>; prepareKnowledgeReview(targetPath: string, message: string): Promise<{ branch: string; commit?: string; }>; }
 export interface PackagePublicationResult { analysisId: string; branch: string; commit?: string; directory: string; files: string[]; }
 export type KnowledgeCategory = "standards" | "facts" | "recommendations" | "decisions" | "exceptions";
 export type KnowledgeChangeRequestStatus = "DRAFT" | "REVIEWED" | "APPROVED" | "PUBLISHED";

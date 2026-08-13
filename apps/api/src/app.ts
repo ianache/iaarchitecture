@@ -1,6 +1,6 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import { z } from "zod";
-import type { AnalysisResult, ArchitectureModel, EvidenceRetriever } from "@architecture-ai/domain";
+import type { AnalysisResult, ArchitectureModel, EvidenceRetriever, KnowledgeChangeRequestInput } from "@architecture-ai/domain";
 import { FilePackageRenderer } from "@architecture-ai/artifacts";
 import { AnalysisService, ApplicationError, GovernanceService, PackageService, PublicationService, KnowledgeChangeRequestService } from "@architecture-ai/application";
 import { LocalGitWorkspace } from "@architecture-ai/governance";
@@ -58,7 +58,7 @@ export function buildApp(dependencies: ApiDependencies): FastifyInstance {
     app.post("/knowledge-change-requests", async (request, reply) => {
       const parsed = knowledgeChangeRequestInputSchema.safeParse(request.body);
       if (!parsed.success) return reply.code(400).send({ code: "INVALID_REQUEST", issues: parsed.error.issues });
-      try { return reply.code(201).send(await knowledgeChangeRequestService.create(parsed.data as any)); } catch (error) { const response = errorResponse(error); return reply.code(response.status).send(response.body); }
+      try { return reply.code(201).send(await knowledgeChangeRequestService.create(parsed.data as KnowledgeChangeRequestInput)); } catch (error) { const response = errorResponse(error); return reply.code(response.status).send(response.body); }
     });
     app.get("/knowledge-change-requests", async (_request, reply) => {
       try { return reply.send(await knowledgeChangeRequestService.list()); } catch (error) { const response = errorResponse(error); return reply.code(response.status).send(response.body); }

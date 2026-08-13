@@ -5,7 +5,7 @@ import { FilePackageRenderer } from "@architecture-ai/artifacts";
 import { AnalysisService, ApplicationError, GovernanceService, PackageService, PublicationService, KnowledgeChangeRequestService } from "@architecture-ai/application";
 import { LocalGitWorkspace } from "@architecture-ai/governance";
 import { ArchitectureOrchestrator } from "@architecture-ai/orchestrator";
-import { AnalysisRepository, DatabaseStore, ReviewRepository } from "@architecture-ai/persistence";
+import { AnalysisRepository, DatabaseStore, ReviewRepository, KnowledgeChangeRequestRepository } from "@architecture-ai/persistence";
 
 const requestSchema = z.object({ requirements: z.string().min(1), knowledgeRevision: z.string().min(1) });
 const reviewSchema = z.object({ reviewer: z.string().min(1).default("human"), comment: z.string().optional() });
@@ -53,7 +53,10 @@ export function buildApp(dependencies: ApiDependencies): FastifyInstance {
   app.post<{ Params: { id: string; action: string }; Body: unknown }>("/decisions/:id/:action", async (request, reply) => { const action = request.params.action.toLowerCase(); if (!["review", "approve", "reject", "request-changes"].includes(action)) return reply.code(400).send({ code: "INVALID_REQUEST" }); const parsed = reviewSchema.safeParse(request.body ?? {}); if (!parsed.success) return reply.code(400).send({ code: "INVALID_REQUEST", issues: parsed.error.issues }); try { const actionMethod = action === "request-changes" ? governanceService.requestChanges.bind(governanceService) : governanceService[action as "review" | "approve" | "reject"].bind(governanceService); const decision = await actionMethod(request.params.id, parsed.data.reviewer, parsed.data.comment); return { decision, review: (await governanceService.audit(request.params.id)).at(-1) }; } catch (error) { const response = errorResponse(error); return reply.code(response.status).send(response.body); } });
   app.get<{ Params: { id: string } }>("/decisions/:id/audit", async (request, reply) => { try { return { events: await governanceService.audit(request.params.id) }; } catch (error) { const response = errorResponse(error); return reply.code(response.status).send(response.body); } });
 
-  const { knowledgeChangeRequestService } = dependencies;
+  const knowledgeChangeRequestService = dependencies.knowledgeChangeRequestService ?? (store ? new KnowledgeChangeRequestService(
+    new KnowledgeChangeRequestRepository(store),
+    new LocalGitWorkspace(process.cwd())
+  ) : undefined);
   if (knowledgeChangeRequestService) {
     app.post("/knowledge-change-requests", async (request, reply) => {
       const parsed = knowledgeChangeRequestInputSchema.safeParse(request.body);

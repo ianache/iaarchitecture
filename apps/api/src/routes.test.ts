@@ -97,4 +97,15 @@ describe("knowledge change request routes", () => {
 
     await app.close();
   });
+
+  it("registers knowledge change request routes via fallback service when omitted", async () => {
+    const app = buildApp({ orchestrator });
+    try {
+      const response = await app.inject({ method: "GET", url: "/knowledge-change-requests" });
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual([]);
+    } finally {
+      await app.close();
+    }
+  });
 });

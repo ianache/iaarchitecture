@@ -39,12 +39,24 @@ export class KnowledgeChangeRequestService {
     return request;
   }
 
+  private validateDocument(request: KnowledgeChangeRequest): string {
+    if (!/^[a-z0-9-_]+$/i.test(request.category) || !/^[a-z0-9-_]+$/i.test(request.document.key)) {
+      throw new ApplicationError("INVALID_OKF_METADATA", "Unsafe category or key values");
+    }
+
+    const markdown = renderKnowledgeMarkdown(request.document);
+    parseKnowledgeDocument(markdown, request.targetPath);
+    return markdown;
+  }
+
   async review(id: string, reviewer: string, comment?: string): Promise<KnowledgeChangeRequest> {
     const request = await this.get(id);
     if (request.status !== "DRAFT" && request.status !== "REVIEWED") {
       throw new ApplicationError("INVALID_KNOWLEDGE_CHANGE_TRANSITION", `Cannot transition to REVIEWED from ${request.status}`);
     }
     
+    this.validateDocument(request);
+
     await this.repository.recordReview({
       id: crypto.randomUUID(),
       requestId: request.id,
@@ -81,21 +93,16 @@ export class KnowledgeChangeRequestService {
     return request;
   }
 
-  async publish(id: string): Promise<KnowledgeChangeRequest> {
+  async publish(id: string, branch?: string): Promise<KnowledgeChangeRequest> {
     const request = await this.get(id);
     if (request.status !== "APPROVED") {
       throw new ApplicationError("INVALID_KNOWLEDGE_CHANGE_TRANSITION", "Knowledge change request must be APPROVED before publication");
     }
 
-    if (!/^[a-z0-9-_]+$/i.test(request.category) || !/^[a-z0-9-_]+$/i.test(request.document.key)) {
-      throw new ApplicationError("INVALID_OKF_METADATA", "Unsafe category or key values");
-    }
-
-    const markdown = renderKnowledgeMarkdown(request.document);
-    parseKnowledgeDocument(markdown, request.targetPath);
+    const markdown = this.validateDocument(request);
 
     try {
-      await this.workspace.createBranch(`knowledge/${request.id.toLowerCase()}`, request.baseRevision);
+      await this.workspace.createBranch(branch ?? `knowledge/${request.id.toLowerCase()}`, request.baseRevision);
       await this.workspace.writeKnowledgeDocument(request.targetPath, markdown);
       const publication = await this.workspace.prepareKnowledgeReview(request.targetPath, `docs: publish ${request.id}`);
 

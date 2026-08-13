@@ -35,6 +35,40 @@ describe("KnowledgeChangeRequestService", () => {
     await expect(service.publish("KCR-1")).rejects.toMatchObject({ code: "INVALID_KNOWLEDGE_CHANGE_TRANSITION" });
   });
 
+  it("rejects review if OKF metadata is invalid", async () => {
+    const request = {
+      id: "KCR-2",
+      status: "DRAFT",
+      author: "dev",
+      baseRevision: "HEAD",
+      targetPath: "knowledge/standards/mfa-standard.md",
+      category: "standards",
+      document: { title: "MFA", summary: "Multi-factor authentication", type: "STANDARD", status: "DRAFT", revision: "HEAD", sourcePath: "", key: "mfa!!invalid!!", id: "k-1", tags: [] } as KnowledgeItem,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    
+    const repository: KnowledgeChangeRequestRepository = {
+      nextId: () => "KCR-2",
+      create: vi.fn(),
+      get: vi.fn().mockResolvedValue(request),
+      list: vi.fn(),
+      update: vi.fn(),
+      recordReview: vi.fn(),
+      listAudit: vi.fn(),
+    };
+    const workspace: GitWorkspace = {
+      createBranch: vi.fn(),
+      getWorkingDirectory: vi.fn(),
+      writePackage: vi.fn(),
+      prepareReview: vi.fn(),
+      writeKnowledgeDocument: vi.fn(),
+      prepareKnowledgeReview: vi.fn(),
+    };
+    const service = new KnowledgeChangeRequestService(repository, workspace);
+    await expect(service.review("KCR-2", "architect")).rejects.toMatchObject({ code: "INVALID_OKF_METADATA" });
+  });
+
   it("publishes an approved request successfully", async () => {
     const request = {
       id: "KCR-1",

@@ -44,3 +44,22 @@ export interface ArchitectureModel { complete(input: ModelRequest): Promise<Mode
 export interface PackageRenderer { renderPackage(result: AnalysisResult, outputDirectory: string): Promise<ArchitecturePackage>; }
 export interface GitWorkspace { createBranch(name: string, revision: string): Promise<string>; getWorkingDirectory(): string; writePackage(directory: string, files: Record<string, string>): Promise<void>; prepareReview(message: string): Promise<{ branch: string; commit?: string; }>; }
 export interface PackagePublicationResult { analysisId: string; branch: string; commit?: string; directory: string; files: string[]; }
+export type KnowledgeCategory = "standards" | "facts" | "recommendations" | "decisions" | "exceptions";
+export type KnowledgeChangeRequestStatus = "DRAFT" | "REVIEWED" | "APPROVED" | "PUBLISHED";
+export interface KnowledgePublicationResult { branch: string; commit?: string; }
+export interface KnowledgeChangeRequest {
+  id: string; category: KnowledgeCategory; document: KnowledgeItem; author: string;
+  baseRevision: string; targetPath: string; status: KnowledgeChangeRequestStatus;
+  createdAt: string; updatedAt: string; publication?: KnowledgePublicationResult;
+}
+export type KnowledgeChangeRequestInput = Omit<KnowledgeChangeRequest, "id" | "status" | "createdAt" | "updatedAt" | "publication">;
+export interface KnowledgeChangeReview { id: string; requestId: string; reviewer: string; action: "APPROVE" | "REQUEST_CHANGES" | "COMMENT"; comment?: string; createdAt: string; }
+export interface KnowledgeChangeRequestRepository {
+  nextId(): string;
+  create(input: KnowledgeChangeRequestInput): Promise<KnowledgeChangeRequest>;
+  get(id: string): Promise<KnowledgeChangeRequest | undefined>;
+  list(): Promise<KnowledgeChangeRequest[]>;
+  update(request: KnowledgeChangeRequest): Promise<void>;
+  recordReview(review: KnowledgeChangeReview): Promise<void>;
+  listAudit(id: string): Promise<KnowledgeChangeReview[]>;
+}

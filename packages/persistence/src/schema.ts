@@ -43,4 +43,20 @@ CREATE TABLE IF NOT EXISTS analysis_result_versions (
   PRIMARY KEY (analysis_id, generation),
   FOREIGN KEY (analysis_id) REFERENCES analyses(id)
 );
+CREATE TABLE IF NOT EXISTS knowledge_change_requests (
+  id TEXT PRIMARY KEY,
+  category TEXT NOT NULL,
+  target_path TEXT NOT NULL,
+  status TEXT NOT NULL,
+  request_json TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS knowledge_change_request_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  request_id TEXT NOT NULL,
+  event_json TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (request_id) REFERENCES knowledge_change_requests(id)
+);
 `;

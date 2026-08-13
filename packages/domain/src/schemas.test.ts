@@ -6,9 +6,14 @@ import {
   nfrValidationSchema,
   requirementSchema,
   traceLinkSchema,
+  knowledgeChangeRequestSchema,
 } from "./schemas.js";
 
 describe("domain schemas", () => {
+  it("rejects invalid knowledge change requests", () => {
+    expect(knowledgeChangeRequestSchema.safeParse({ key: "mfa-standard", category: "standards", type: "STANDARD" }).success).toBe(false);
+  });
+
   it("accepts traceable domain controls and measurable NFR validations", () => {
     const analysis = domainAnalysisSchema.parse({
       domain: "SECURITY",

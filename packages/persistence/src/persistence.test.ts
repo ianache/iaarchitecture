@@ -2,13 +2,33 @@ import { afterEach, describe, expect, it } from "vitest";
 import { DatabaseStore } from "./database.js";
 import { AnalysisRepository } from "./analysis-repository.js";
 import { ReviewRepository } from "./review-repository.js";
-import type { AnalysisResult, ArchitectureDecision, Review } from "@architecture-ai/domain";
+import { KnowledgeChangeRequestRepository } from "./knowledge-change-request-repository.js";
+import type { AnalysisResult, ArchitectureDecision, Review, KnowledgeChangeRequestInput } from "@architecture-ai/domain";
 import { rmSync } from "node:fs";
 const path = ".architecture-ai/persistence-test.sqlite";
 afterEach(() => { rmSync(path, { force: true }); });
 const decision: ArchitectureDecision = { id: "DEC-1", title: "Use API", context: "Need stable contracts", decision: "Use versioned API", rationale: "Compatibility", evidenceIds: ["E-1"], sourceRequirementIds: ["REQ-1"], significant: true, status: "DRAFT", classification: "DECISION" };
 const result: AnalysisResult = { context: { revision: "abc", requirements: [], drivers: [], evidence: [], recommendations: [], decisions: [], artifacts: [], links: [], status: { value: "DRAFT", requiredDecisionIds: [], approvedDecisionIds: [] } }, findings: [], risks: [], artifacts: [], packageStatus: { value: "DRAFT", requiredDecisionIds: [], approvedDecisionIds: [] } };
 describe("SQLite persistence", () => {
+  it("persists knowledge change requests", async () => {
+    let store = DatabaseStore.open(path);
+    let createdId: string;
+    try {
+      const repository = new KnowledgeChangeRequestRepository(store);
+      const validDraft: KnowledgeChangeRequestInput = {
+        category: "standards", document: { id: "KI-1", key: "mfa-standard", title: "MFA", summary: "Use MFA", type: "STANDARD", status: "DRAFT", revision: "rev-1", sourcePath: "knowledge/standards/mfa-standard.md", tags: [] },
+        author: "alice", baseRevision: "abc", targetPath: "knowledge/standards/mfa-standard.md"
+      };
+      const created = await repository.create(validDraft);
+      createdId = created.id;
+    } finally { store.close(); }
+    store = DatabaseStore.open(path);
+    try {
+      const reopened = new KnowledgeChangeRequestRepository(store);
+      expect(await reopened.get(createdId)).toMatchObject({ status: "DRAFT", targetPath: "knowledge/standards/mfa-standard.md" });
+    } finally { store.close(); }
+  });
+
   it("round-trips analyses, decisions and audit entries after reopen", async () => {
     let store = DatabaseStore.open(path);
     try {

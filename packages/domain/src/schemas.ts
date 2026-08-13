@@ -12,3 +12,27 @@ export const domainControlSchema = z.object({ id: nonEmpty, title: nonEmpty, des
 export const domainAnalysisSchema = z.object({ domain: z.enum(["SECURITY", "INFRASTRUCTURE"]), controls: z.array(domainControlSchema), gaps: z.array(z.string()), assumptions: z.array(z.string()) });
 export const nfrValidationSchema = z.object({ id: nonEmpty, name: nonEmpty, metric: nonEmpty, target: z.union([z.string(), z.number()]), unit: nonEmpty, sourceRequirementIds: z.array(nonEmpty), evidenceIds: z.array(z.string()), status: z.enum(["VALIDATED", "PENDING_REVIEW", "UNSUPPORTED"]), rationale: nonEmpty });
 export const skillInputSchema = z.object({ request: z.object({ requirements: nonEmpty, knowledgeRevision: nonEmpty, analysisId: z.string().optional() }), context: z.unknown(), evidence: z.array(evidenceSchema), priorDecisions: z.array(architectureDecisionSchema) });
+
+export const knowledgeCategorySchema = z.enum(["standards", "facts", "recommendations", "decisions", "exceptions"]);
+export const knowledgeChangeRequestStatusSchema = z.enum(["DRAFT", "REVIEWED", "APPROVED", "PUBLISHED"]);
+export const knowledgePublicationResultSchema = z.object({ branch: nonEmpty, commit: nonEmpty.optional() });
+export const knowledgeChangeRequestSchema = z.object({
+  id: nonEmpty,
+  category: knowledgeCategorySchema,
+  document: knowledgeItemSchema,
+  author: nonEmpty,
+  baseRevision: nonEmpty,
+  targetPath: nonEmpty,
+  status: knowledgeChangeRequestStatusSchema,
+  createdAt: nonEmpty,
+  updatedAt: nonEmpty,
+  publication: knowledgePublicationResultSchema.optional()
+});
+export const knowledgeChangeReviewSchema = z.object({
+  id: nonEmpty,
+  requestId: nonEmpty,
+  reviewer: nonEmpty,
+  action: z.enum(["APPROVE", "REQUEST_CHANGES", "COMMENT"]),
+  comment: nonEmpty.optional(),
+  createdAt: nonEmpty
+});

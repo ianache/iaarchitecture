@@ -10,10 +10,12 @@ describe("KnowledgeChangeRequests", () => {
 
   it("creates a new draft and reviews it", async () => {
     const client = {
-      listKcrs: vi.fn().mockResolvedValue({ requests: [] }),
+      listKcrs: vi.fn().mockResolvedValue([]),
       createKcr: vi.fn().mockResolvedValue({ id: "KCR-1", status: "DRAFT" }),
       getKcr: vi.fn().mockResolvedValue({ id: "KCR-1", status: "DRAFT", category: "standards", author: "test", baseRevision: "abc", document: { title: "Test" } }),
       reviewKcr: vi.fn().mockResolvedValue({}),
+      approveKcr: vi.fn().mockResolvedValue({}),
+      getKcrAudit: vi.fn().mockResolvedValue({ events: [] }),
     } as unknown as ApiClient;
 
     render(<KnowledgeChangeRequests client={client} onBack={vi.fn()} />);

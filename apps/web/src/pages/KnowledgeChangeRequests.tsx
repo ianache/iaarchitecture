@@ -16,7 +16,7 @@ export function KnowledgeChangeRequests({ client, onBack }: Props) {
     try {
       setError(undefined);
       const res = await client.listKcrs();
-      setRequests(res.requests);
+      setRequests(Array.isArray(res) ? res : (res as any).requests ?? []);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -92,7 +92,7 @@ export function KnowledgeChangeRequests({ client, onBack }: Props) {
     const review = async (id: string) => {
       try {
         setError(undefined);
-        await client.reviewKcr(id, "review");
+        await client.reviewKcr(id, "web-user");
         await loadDetail(id);
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
@@ -101,7 +101,7 @@ export function KnowledgeChangeRequests({ client, onBack }: Props) {
     const approve = async (id: string) => {
       try {
         setError(undefined);
-        await client.reviewKcr(id, "approve");
+        await client.approveKcr(id, "web-user");
         await loadDetail(id);
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));

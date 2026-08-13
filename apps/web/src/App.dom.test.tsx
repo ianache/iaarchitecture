@@ -141,16 +141,18 @@ describe("Knowledge Authoring Workspace", () => {
     const originalFetch = globalThis.fetch;
     globalThis.fetch = async (input, init) => {
       const url = String(input); requests.push(`${init?.method ?? "GET"} ${url}`);
-      if (url.endsWith("/knowledge/requests") && !init?.method) return response({ requests: kcrStatus === "PUBLISHED" ? [] : [{ id: "KCR-1", category: "standards", author: "web-user", baseRevision: "abc", document: { key: "STD-1", title: "Standard 1", summary: "Summary", content: "Content", type: "STANDARD", status: "DRAFT", tags: [] }, status: kcrStatus }] });
-      if (url.includes("/knowledge/requests/KCR-1") && (!init || !init.method || init.method === "GET")) return response({ id: "KCR-1", category: "standards", author: "web-user", baseRevision: "abc", document: { key: "STD-1", title: "Standard 1", summary: "Summary", content: "Content", type: "STANDARD", status: "DRAFT", tags: [] }, status: kcrStatus });
-      if (url.endsWith("/knowledge/requests") && init?.method === "POST") return response({ id: "KCR-1" }, 201);
-      if (url.includes("/knowledge/requests/KCR-1/review")) {
-        const body = JSON.parse(String(init?.body));
-        if (body.action === "approve") kcrStatus = "APPROVED";
-        else if (body.action === "review") kcrStatus = "REVIEWED";
+      if (url.endsWith("/knowledge-change-requests") && !init?.method) return response(kcrStatus === "PUBLISHED" ? [] : [{ id: "KCR-1", category: "standards", author: "web-user", baseRevision: "abc", document: { key: "STD-1", title: "Standard 1", summary: "Summary", content: "Content", type: "STANDARD", status: "DRAFT", tags: [] }, status: kcrStatus }]);
+      if (url.includes("/knowledge-change-requests/KCR-1") && (!init || !init.method || init.method === "GET")) return response({ id: "KCR-1", category: "standards", author: "web-user", baseRevision: "abc", document: { key: "STD-1", title: "Standard 1", summary: "Summary", content: "Content", type: "STANDARD", status: "DRAFT", tags: [] }, status: kcrStatus });
+      if (url.endsWith("/knowledge-change-requests") && init?.method === "POST") return response({ id: "KCR-1" }, 201);
+      if (url.includes("/knowledge-change-requests/KCR-1/review")) {
+        kcrStatus = "REVIEWED";
         return response({});
       }
-      if (url.includes("/knowledge/requests/KCR-1/publish")) {
+      if (url.includes("/knowledge-change-requests/KCR-1/approve")) {
+        kcrStatus = "APPROVED";
+        return response({});
+      }
+      if (url.includes("/knowledge-change-requests/KCR-1/publish")) {
         if (kcrStatus !== "APPROVED") return response({ code: "INVALID_STATUS", message: "KCR must be APPROVED" }, 409);
         kcrStatus = "PUBLISHED";
         return response({ branch: "knowledge/kcr-1" }, 201);
@@ -188,10 +190,10 @@ describe("Knowledge Authoring Workspace", () => {
       await waitFor(() => expect(screen.getByText(/KCR published on knowledge\/kcr-1/)).toBeInTheDocument());
 
       expect(requests).toEqual(expect.arrayContaining([
-        "POST http://127.0.0.1:3000/knowledge/requests",
-        "POST http://127.0.0.1:3000/knowledge/requests/KCR-1/review", // review
-        "POST http://127.0.0.1:3000/knowledge/requests/KCR-1/review", // approve
-        "POST http://127.0.0.1:3000/knowledge/requests/KCR-1/publish"
+        "POST http://127.0.0.1:3000/knowledge-change-requests",
+        "POST http://127.0.0.1:3000/knowledge-change-requests/KCR-1/review", // review
+        "POST http://127.0.0.1:3000/knowledge-change-requests/KCR-1/approve", // approve
+        "POST http://127.0.0.1:3000/knowledge-change-requests/KCR-1/publish"
       ]));
     } finally { globalThis.fetch = originalFetch; }
   });
@@ -201,10 +203,10 @@ describe("Knowledge Authoring Workspace", () => {
     const originalFetch = globalThis.fetch;
     globalThis.fetch = async (input, init) => {
       const url = String(input);
-      if (url.endsWith("/knowledge/requests") && !init?.method) return response({ requests: [{ id: "KCR-1", category: "standards", author: "web-user", baseRevision: "abc", document: { key: "STD-1", title: "Standard 1", summary: "Summary", content: "Content", type: "STANDARD", status: "DRAFT", tags: [] }, status: kcrStatus }] });
-      if (url.includes("/knowledge/requests/KCR-1") && (!init || !init.method || init.method === "GET")) return response({ id: "KCR-1", category: "standards", author: "web-user", baseRevision: "abc", document: { key: "STD-1", title: "Standard 1", summary: "Summary", content: "Content", type: "STANDARD", status: "DRAFT", tags: [] }, status: kcrStatus });
-      if (url.endsWith("/knowledge/requests") && init?.method === "POST") return response({ code: "VALIDATION_ERROR", message: "Invalid draft" }, 400);
-      if (url.includes("/knowledge/requests/KCR-1/publish")) return response({ code: "INVALID_STATUS", message: "KCR must be APPROVED" }, 409);
+      if (url.endsWith("/knowledge-change-requests") && !init?.method) return response([{ id: "KCR-1", category: "standards", author: "web-user", baseRevision: "abc", document: { key: "STD-1", title: "Standard 1", summary: "Summary", content: "Content", type: "STANDARD", status: "DRAFT", tags: [] }, status: kcrStatus }]);
+      if (url.includes("/knowledge-change-requests/KCR-1") && (!init || !init.method || init.method === "GET")) return response({ id: "KCR-1", category: "standards", author: "web-user", baseRevision: "abc", document: { key: "STD-1", title: "Standard 1", summary: "Summary", content: "Content", type: "STANDARD", status: "DRAFT", tags: [] }, status: kcrStatus });
+      if (url.endsWith("/knowledge-change-requests") && init?.method === "POST") return response({ code: "VALIDATION_ERROR", message: "Invalid draft" }, 400);
+      if (url.includes("/knowledge-change-requests/KCR-1/publish")) return response({ code: "INVALID_STATUS", message: "KCR must be APPROVED" }, 409);
       if (url.endsWith("/analyses")) return response({ analyses: [] });
       return response({}, 404);
     };

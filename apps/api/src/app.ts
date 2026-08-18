@@ -1,6 +1,6 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import { z } from "zod";
-import type { AnalysisResult, ArchitectureModel, EvidenceRetriever, KnowledgeChangeRequestInput } from "@architecture-ai/domain";
+import type { AnalysisResult, ArchitectureModel, EvidenceRetriever, KnowledgeChangeRequestInput, KnowledgeItem } from "@architecture-ai/domain";
 import { FilePackageRenderer } from "@architecture-ai/artifacts";
 import { AnalysisService, ApplicationError, GovernanceService, PackageService, PublicationService, KnowledgeChangeRequestService } from "@architecture-ai/application";
 import { LocalGitWorkspace } from "@architecture-ai/governance";
@@ -11,7 +11,7 @@ const requestSchema = z.object({ requirements: z.string().min(1), knowledgeRevis
 const reviewSchema = z.object({ reviewer: z.string().min(1).default("human"), comment: z.string().optional() });
 const packageGenerationSchema = z.object({ outputDirectory: z.string().min(1).optional() }).strict();
 interface PackageReadService { get(id: string): Promise<AnalysisResult>; }
-export interface ApiDependencies { orchestrator: ArchitectureOrchestrator; knowledgeRevision?: string; analysisRepository?: AnalysisRepository; reviewRepository?: ReviewRepository; analysisService?: AnalysisService; packageService?: PackageService & PackageReadService; governanceService?: GovernanceService; publicationService?: PublicationService; knowledgeChangeRequestService?: KnowledgeChangeRequestService; }
+export interface ApiDependencies { orchestrator: ArchitectureOrchestrator; knowledgeRevision?: string; knowledgeItems?: KnowledgeItem[]; analysisRepository?: AnalysisRepository; reviewRepository?: ReviewRepository; analysisService?: AnalysisService; packageService?: PackageService & PackageReadService; governanceService?: GovernanceService; publicationService?: PublicationService; knowledgeChangeRequestService?: KnowledgeChangeRequestService; }
 
 const knowledgeChangeRequestInputSchema = z.object({
   author: z.string().min(1).default("human"),
@@ -52,6 +52,7 @@ export function buildApp(dependencies: ApiDependencies): FastifyInstance {
   app.post<{ Params: { id: string }; Body: unknown }>("/packages/:id/publish", async (request, reply) => { const body = z.object({ branch: z.string().min(1).regex(/^[A-Za-z0-9._/-]+$/).optional() }).strict().safeParse(request.body ?? {}); if (!body.success) return reply.code(400).send({ code: "INVALID_REQUEST", issues: body.error.issues }); try { return reply.code(201).send(await publicationService.publish(request.params.id, body.data.branch)); } catch (error) { const response = errorResponse(error); return reply.code(response.status).send(response.body); } });
   app.post<{ Params: { id: string; action: string }; Body: unknown }>("/decisions/:id/:action", async (request, reply) => { const action = request.params.action.toLowerCase(); if (!["review", "approve", "reject", "request-changes"].includes(action)) return reply.code(400).send({ code: "INVALID_REQUEST" }); const parsed = reviewSchema.safeParse(request.body ?? {}); if (!parsed.success) return reply.code(400).send({ code: "INVALID_REQUEST", issues: parsed.error.issues }); try { const actionMethod = action === "request-changes" ? governanceService.requestChanges.bind(governanceService) : governanceService[action as "review" | "approve" | "reject"].bind(governanceService); const decision = await actionMethod(request.params.id, parsed.data.reviewer, parsed.data.comment); return { decision, review: (await governanceService.audit(request.params.id)).at(-1) }; } catch (error) { const response = errorResponse(error); return reply.code(response.status).send(response.body); } });
   app.get<{ Params: { id: string } }>("/decisions/:id/audit", async (request, reply) => { try { return { events: await governanceService.audit(request.params.id) }; } catch (error) { const response = errorResponse(error); return reply.code(response.status).send(response.body); } });
+  app.get("/knowledge-items", async (_request, reply) => reply.send({ items: dependencies.knowledgeItems ?? [], revision: dependencies.knowledgeRevision }));
 
   const knowledgeChangeRequestService = dependencies.knowledgeChangeRequestService ?? (store ? new KnowledgeChangeRequestService(
     new KnowledgeChangeRequestRepository(store),
@@ -97,4 +98,4 @@ export function buildApp(dependencies: ApiDependencies): FastifyInstance {
   return app;
 }
 
-export function createDefaultApp(retriever: EvidenceRetriever, model: ArchitectureModel, knowledgeRevision?: string): FastifyInstance { return buildApp({ orchestrator: new ArchitectureOrchestrator(retriever, model), knowledgeRevision }); }
+export function createDefaultApp(retriever: EvidenceRetriever, model: ArchitectureModel, knowledgeRevision?: string, knowledgeItems?: KnowledgeItem[]): FastifyInstance { return buildApp({ orchestrator: new ArchitectureOrchestrator(retriever, model), knowledgeRevision, knowledgeItems }); }

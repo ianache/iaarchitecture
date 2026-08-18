@@ -17,4 +17,4 @@ const revision = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }
 const snapshot = await new GitKnowledgeRepository(process.cwd()).readRevision(revision);
 const retrieval = new RetrievalService();
 await retrieval.buildProjections(snapshot);
-await startServer(retrieval, new DeterministicModel(), Number(process.env.ARCHITECTURE_AI_PORT ?? 3000), revision);
+await startServer(retrieval, new DeterministicModel(), Number(process.env.ARCHITECTURE_AI_PORT ?? 3000), revision, snapshot.items);

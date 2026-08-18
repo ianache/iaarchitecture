@@ -1,4 +1,4 @@
-import type { AnalysisResult, AnalysisSummary, ArchitectureDecision, PackageGenerationResult, PackagePublicationResult, Review, TraceLink } from "@architecture-ai/domain";
+import type { AnalysisResult, AnalysisSummary, ArchitectureDecision, KnowledgeItem, PackageGenerationResult, PackagePublicationResult, Review, TraceLink } from "@architecture-ai/domain";
 
 export interface ApiClient { 
   createAnalysis(requirements: string, knowledgeRevision: string): Promise<{ id: string; status: unknown }>; 
@@ -12,6 +12,7 @@ export interface ApiClient {
   reviewDecision(id: string, action: "review" | "approve" | "reject" | "request-changes"): Promise<unknown>; 
   getAudit(id: string): Promise<{ events: Review[] }>; 
   
+  listKnowledgeItems(): Promise<{ items: KnowledgeItem[]; revision?: string }>;
   createKcr(input: any): Promise<{ id: string; status: string }>;
   listKcrs(): Promise<any[]>;
   getKcr(id: string): Promise<any>;
@@ -42,6 +43,7 @@ export function createApiClient(baseUrl: string): ApiClient {
     reviewDecision: (id, action) => json(`/decisions/${id}/${action}`, { method: "POST", body: JSON.stringify({ reviewer: "web-user" }) }),
     getAudit: (id) => json<{ events: Review[] }>(`/decisions/${id}/audit`),
 
+    listKnowledgeItems: () => json<{ items: KnowledgeItem[]; revision?: string }>("/knowledge-items"),
     createKcr: (input) => json<{ id: string; status: string }>("/knowledge-change-requests", { method: "POST", body: JSON.stringify(input) }),
     listKcrs: () => json<any[]>("/knowledge-change-requests"),
     getKcr: (id) => json<any>(`/knowledge-change-requests/${id}`),

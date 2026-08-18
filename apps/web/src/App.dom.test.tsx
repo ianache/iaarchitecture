@@ -227,9 +227,10 @@ describe("Knowledge Authoring Workspace", () => {
       // Set to APPROVED so we can see the Publish button, but mock publish to fail
       kcrStatus = "APPROVED";
 
-      // Go back
+      // Go back to the knowledge entries browse screen, then into Change requests
       fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-      
+      fireEvent.click(await screen.findByRole("button", { name: "Change requests" }));
+
       // Test Publish Failure
       await waitFor(() => expect(screen.getByRole("button", { name: "View" })).toBeInTheDocument());
       fireEvent.click(screen.getByRole("button", { name: "View" }));

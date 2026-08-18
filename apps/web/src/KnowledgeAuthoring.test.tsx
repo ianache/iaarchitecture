@@ -2,14 +2,15 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { KnowledgeChangeRequests } from "./pages/KnowledgeChangeRequests.js";
+import { KnowledgeAuthoring } from "./pages/KnowledgeAuthoring.js";
 import type { ApiClient } from "./api/client.js";
 
-describe("KnowledgeChangeRequests", () => {
+describe("KnowledgeAuthoring", () => {
   afterEach(() => cleanup());
 
   it("creates a new draft and reviews it", async () => {
     const client = {
+      listKnowledgeItems: vi.fn().mockResolvedValue({ items: [] }),
       listKcrs: vi.fn().mockResolvedValue([]),
       createKcr: vi.fn().mockResolvedValue({ id: "KCR-1", status: "DRAFT" }),
       getKcr: vi.fn().mockResolvedValue({ id: "KCR-1", status: "DRAFT", category: "standards", author: "test", baseRevision: "abc", document: { title: "Test" } }),
@@ -18,7 +19,7 @@ describe("KnowledgeChangeRequests", () => {
       getKcrAudit: vi.fn().mockResolvedValue({ events: [{ timestamp: new Date().toISOString(), actor: "test", action: "CREATED" }] }),
     } as unknown as ApiClient;
 
-    render(<KnowledgeChangeRequests client={client} onBack={vi.fn()} />);
+    render(<KnowledgeAuthoring client={client} onBack={vi.fn()} />);
 
     // Click "New knowledge proposal"
     fireEvent.click(await screen.findByRole("button", { name: "New knowledge proposal" }));

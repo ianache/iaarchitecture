@@ -35,6 +35,39 @@ export interface ModelAdapter {
   healthcheck?(): Promise<boolean>;
 }
 
+export function isObject(x: unknown): x is Record<string, unknown> {
+  return typeof x === "object" && x !== null;
+}
+
+export function extractEmbedding(obj: unknown): number[] | null {
+  if (!isObject(obj)) return null;
+  // shape: { embedding: number[] }
+  if (Array.isArray(obj.embedding) && obj.embedding.every((n) => typeof n === "number")) {
+    return obj.embedding as number[];
+  }
+  // shape: { data: [{ embedding: number[] }] }
+  if (Array.isArray(obj.data) && obj.data.length > 0 && isObject(obj.data[0]) && Array.isArray(obj.data[0].embedding) && obj.data[0].embedding.every((n) => typeof n === "number")) {
+    return obj.data[0].embedding as number[];
+  }
+  // shape: { embeddings: number[][] }
+  if (Array.isArray(obj.embeddings) && Array.isArray(obj.embeddings[0]) && obj.embeddings[0].every((n: unknown) => typeof n === "number")) {
+    return obj.embeddings[0] as number[];
+  }
+  return null;
+}
+
+export function extractText(obj: unknown): string | null {
+  if (!isObject(obj)) return null;
+  if (typeof obj.output === "string") return obj.output;
+  if (typeof obj.result === "string") return obj.result;
+  if (Array.isArray(obj.choices) && obj.choices.length > 0 && isObject(obj.choices[0])) {
+    const first = obj.choices[0];
+    if (isObject(first.message) && typeof first.message.content === "string") return first.message.content;
+    if (typeof first.text === "string") return first.text;
+  }
+  return null;
+}
+
 /*
   OllamaAdapter: basic HTTP client for Ollama.
   Expects OLLAMA_URL and optionally OLLAMA_API_KEY in env.
@@ -49,7 +82,7 @@ export class OllamaAdapter implements ModelAdapter {
   constructor(opts?: { baseUrl?: string; apiKey?: string; embeddingModel?: string; generationModel?: string }) {
     this.baseUrl = opts?.baseUrl ?? process.env.OLLAMA_URL ?? "http://127.0.0.1:11434";
     this.apiKey = opts?.apiKey ?? process.env.OLLAMA_API_KEY;
-    this.defaultEmbeddingModel = opts?.embeddingModel ?? process.env.EMBEDDING_MODEL ?? "local-embed";
+    this.defaultEmbeddingModel = opts?.embeddingModel ?? process.env.EMBEDDING_MODEL ?? "qwen3-embedding:0.6b";
     this.defaultGenerationModel = opts?.generationModel ?? process.env.GENERATION_MODEL ?? "local-gen";
   }
 
@@ -66,11 +99,9 @@ export class OllamaAdapter implements ModelAdapter {
       const txt = await res.text();
       throw new Error(`Ollama embed failed: ${res.status} ${txt}`);
     }
-    const j = await res.json();
-    // Ollama embedding response shapes vary. Try common shapes.
-    const embedding = j.embedding ?? j.data?.[0]?.embedding ?? j.embeddings ?? null;
+    const j = (await res.json()) as unknown;
+    const embedding = extractEmbedding(j);
     if (!embedding) throw new Error("Unexpected embedding response from Ollama: " + JSON.stringify(j));
-
     return { embedding, model };
   }
 
@@ -93,11 +124,9 @@ export class OllamaAdapter implements ModelAdapter {
       throw new Error(`Ollama generate failed: ${res.status} ${txt}`);
     }
 
-    const j = await res.json();
-    // Normalize common response shapes
-    const text = j.output ?? j.choices?.[0]?.message?.content ?? j.choices?.[0]?.text ?? j.result ?? null;
+    const j = (await res.json()) as unknown;
+    const text = extractText(j);
     if (text == null) throw new Error("Unexpected generation response from Ollama: " + JSON.stringify(j));
-
     return { text: String(text), model };
   }
 
@@ -125,8 +154,9 @@ export class OpenAIAdapter implements ModelAdapter {
     const body = { model: process.env.OPENAI_EMBEDDING_MODEL ?? "text-embedding-3-small", input: text };
     const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${this.apiKey}` }, body: JSON.stringify(body) });
     if (!res.ok) throw new Error(`OpenAI embed error: ${res.status}`);
-    const j = await res.json();
-    const embedding = j.data?.[0]?.embedding;
+    const j = (await res.json()) as unknown;
+    const embedding = extractEmbedding(j);
+    if (!embedding) throw new Error("Unexpected embedding response from OpenAI: " + JSON.stringify(j));
     return { embedding, model: body.model } as EmbedResult;
   }
   async generate(prompt: string): Promise<GenerateResult> {
@@ -135,8 +165,9 @@ export class OpenAIAdapter implements ModelAdapter {
     const body = { model: process.env.OPENAI_GENERATION_MODEL ?? "gpt-4o-mini", messages: [{ role: "user", content: prompt }] };
     const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${this.apiKey}` }, body: JSON.stringify(body) });
     if (!res.ok) throw new Error(`OpenAI generate error: ${res.status}`);
-    const j = await res.json();
-    const text = j.choices?.[0]?.message?.content ?? j.choices?.[0]?.text;
+    const j = (await res.json()) as unknown;
+    const text = extractText(j);
+    if (text == null) throw new Error("Unexpected generation response from OpenAI: " + JSON.stringify(j));
     return { text: String(text), model: body.model };
   }
 }

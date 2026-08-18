@@ -167,12 +167,79 @@ Opciones del script
 - --batch-size N (por defecto 8)
 - --force — recalcula embeddings aunque la misma file+revision ya exista
 
+
 Notas importantes
 
 - Idempotencia: el script evita reindexar la misma combinación file/revision si ya existe una entrada, a menos que uses --force.
 - Sensibilidad: archivos con frontmatter `sensitivity: true` o `sensitive: true` se omiten por defecto.
 - Embeddings: se guardan como JSON en la tabla `embeddings` de SQLite (columna embedding_json). Esta es una solución de prototipo; para producción considera migrar a Postgres+pgvector o Qdrant.
 - Endpoints Ollama: el script llama a `${OLLAMA_URL}/embed`. Ajusta el endpoint si tu versión de Ollama usa otro contrato.
+
+### Modelos de embeddings recomendados (Ollama)
+
+- **Rápido / CPU-friendly (recomendado por defecto):** `sentence-transformers/all-MiniLM-L6-v2` — 384 dimensiones. Pull:
+
+```bash
+ollama pull sentence-transformers/all-MiniLM-L6-v2
+```
+
+- **Mayor calidad (más pesado):** `sentence-transformers/all-mpnet-base-v2` — 768 dimensiones. Pull:
+
+```bash
+ollama pull sentence-transformers/all-mpnet-base-v2
+```
+
+- **Configurar en el repositorio / entorno:** establece la variable `EMBEDDING_MODEL` para usar el modelo deseado. Ejemplos:
+
+PowerShell:
+
+```powershell
+$env:EMBEDDING_MODEL = 'sentence-transformers/all-MiniLM-L6-v2'
+```
+
+bash / macOS / Linux:
+
+```bash
+export EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
+```
+
+- **Dimensiones esperadas:** MiniLM = 384, mpnet = 768. Asegúrate de que tu motor/tabla de vectores (o configuración de indexación) esté preparado para la dimensionalidad elegida.
+
+--
+
+### Usar `qwen3-embedding:0.6b`
+
+Por defecto ahora el adaptador intenta usar `qwen3-embedding:0.6b`. Si quieres emplear ese modelo explícitamente, establece la variable de entorno o deja el valor por defecto:
+
+PowerShell:
+
+```powershell
+$env:EMBEDDING_MODEL = 'qwen3-embedding:0.6b'
+```
+
+bash:
+
+```bash
+export EMBEDDING_MODEL=qwen3-embedding:0.6b
+```
+
+Si ya has hecho `ollama pull qwen3-embedding:0.6b` en tu máquina y la descarga fue exitosa, la API usará ese modelo cuando invoques el script de ingest. Si `ollama pull qwen3-embedding:0.6b` falla, ten en cuenta:
+
+- Ollama sólo puede `pull` modelos empaquetados y disponibles en su registro en un formato compatible (GGUF/llama.cpp u otros formatos soportados por tu versión de Ollama).
+- Si recibes `pull model manifest: file does not exist` o `Repository is not GGUF or is not compatible with llama.cpp`, entonces la versión concreta no está disponible para el registro y deberás usar una alternativa:
+	- Usar la librería local `sentence-transformers`/otro runtime para calcular embeddings y guardar el resultado en SQLite.
+	- Buscar una versión GGUF/compatible y `pull` esa versión concreta.
+
+Ejemplo de comando de pull (si está disponible en tu registro Ollama):
+
+```powershell
+ollama pull qwen3-embedding:0.6b
+```
+
+Si quieres, puedo añadir al script de ingest una comprobación que lea la dimensionalidad del embedding devuelto por el modelo y falle con un mensaje instructivo si no coincide con lo esperado.
+
+- **Prueba rápida:** llama al endpoint `${OLLAMA_URL}/embed` con un payload JSON `{"model":"<modelo>","input":"texto"}` y verifica que la respuesta incluya una matriz `embedding`.
+
 
 Usar la CLI (opcional)
 

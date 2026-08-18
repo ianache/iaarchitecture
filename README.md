@@ -1,6 +1,10 @@
 # Architecture AI MVP
 
+![Diagrama de arquitectura de Architecture AI (C4, nivel de contenedores)](docs/arquitectura-contenedores.svg)
+
 Architecture AI convierte un PRD o historias de usuario en un Architecture Package trazable y restringido por evidencia. `knowledge/` y `ontology/` son el System of Record; SQLite solo guarda el estado y metadatos del análisis en la etapa MVP.
+
+Arquitectura completa (Contexto, Contenedores, Componentes): [docs/solucion/arquitectura-c4.md](docs/solucion/arquitectura-c4.md).
 
 ## Requisitos e instalación
 

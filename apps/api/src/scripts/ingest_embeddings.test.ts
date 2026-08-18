@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
-import Database from 'better-sqlite3';
+import { DatabaseSync } from 'node:sqlite';
 import { reindexMain } from './ingest_embeddings';
 
 describe('ingest_embeddings integration (reindexMain) with mock adapter', () => {
@@ -31,7 +31,7 @@ describe('ingest_embeddings integration (reindexMain) with mock adapter', () => 
     expect(res1.processed).toBe(1);
 
     // Check DB has one entry
-    const db1 = new Database(sqlitePath);
+    const db1 = new DatabaseSync(sqlitePath);
     const row1 = db1.prepare('SELECT COUNT(*) as c FROM embeddings').get();
     expect(row1.c).toBe(1);
 

@@ -1,7 +1,8 @@
 import fs from 'fs/promises';
 import path from 'path';
-import Database from 'better-sqlite3';
-import { createAdapter } from '../services/model-adapter';
+import { pathToFileURL } from 'node:url';
+import { DatabaseSync } from 'node:sqlite';
+import { createAdapter } from '../services/model-adapter.js';
 
 function uuidv4() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -67,13 +68,16 @@ async function getEmbedding(adapter: any, text: string) {
   return res.embedding;
 }
 
-async function main() {
-  const { knowledgePath, revision, batchSize, force } = parseFlags();
-  const SQLITE_PATH = process.env.SQLITE_PATH ?? '.architecture-ai/architecture-ai.sqlite';
-  console.log(`Reindex (TS) starting: ${knowledgePath} rev=${revision} sqlite=${SQLITE_PATH}`);
+export async function reindexMain(
+  options: { knowledgePath: string; revision: string; batchSize: number; force: boolean },
+  sqlitePath = process.env.SQLITE_PATH ?? '.architecture-ai/architecture-ai.sqlite',
+  adapter = createAdapter('ollama', { baseUrl: process.env.OLLAMA_URL, apiKey: process.env.OLLAMA_API_KEY, embeddingModel: process.env.EMBEDDING_MODEL })
+) {
+  const { knowledgePath, revision, batchSize, force } = options;
+  console.log(`Reindex (TS) starting: ${knowledgePath} rev=${revision} sqlite=${sqlitePath}`);
 
-  await fs.mkdir(path.dirname(SQLITE_PATH), { recursive: true });
-  const db = new Database(SQLITE_PATH);
+  await fs.mkdir(path.dirname(sqlitePath), { recursive: true });
+  const db = new DatabaseSync(sqlitePath);
 
   db.exec(`CREATE TABLE IF NOT EXISTS embeddings (
     id TEXT PRIMARY KEY,
@@ -87,8 +91,6 @@ async function main() {
 
   const files = await walkDir(knowledgePath).catch(err => { console.error('walkDir failed', err); process.exit(1); });
   console.log(`Found ${files.length} files`);
-
-  const adapter = createAdapter('ollama', { baseUrl: process.env.OLLAMA_URL, apiKey: process.env.OLLAMA_API_KEY, embeddingModel: process.env.EMBEDDING_MODEL });
 
   const insertStmt = db.prepare('INSERT OR REPLACE INTO embeddings (id, file_path, commit_sha, revision, content_snippet, embedding_json) VALUES (?, ?, ?, ?, ?, ?)');
 
@@ -122,6 +124,16 @@ async function main() {
 
   console.log(`Reindex finished. Processed: ${processed}`);
   db.close();
+  return { processed, totalFiles: files.length };
 }
 
-main().catch(err => { console.error('Fatal error', err); process.exit(1); });
+async function main() {
+  const { knowledgePath, revision, batchSize, force } = parseFlags();
+  const sqlitePath = process.env.SQLITE_PATH ?? '.architecture-ai/architecture-ai.sqlite';
+  const adapter = createAdapter('ollama', { baseUrl: process.env.OLLAMA_URL, apiKey: process.env.OLLAMA_API_KEY, embeddingModel: process.env.EMBEDDING_MODEL });
+  await reindexMain({ knowledgePath, revision, batchSize, force }, sqlitePath, adapter);
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch(err => { console.error('Fatal error', err); process.exit(1); });
+}

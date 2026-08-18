@@ -7,20 +7,44 @@ Architecture AI convierte un PRD o historias de usuario en un Architecture Packa
 - Node.js 22+
 - pnpm 9+
 
+En PowerShell, asegúrese de situarse en la raíz del repositorio y de que Node esté disponible en `PATH`:
+
 ```powershell
+Set-Location "D:\02-PERSONAL\01-PROJECTS\37-iaarchitecture"
+$env:Path = "D:\00-PROGRAMAS\nodejs;" + $env:Path
+node --version
+pnpm --version
 pnpm install
+pnpm -r build
 pnpm typecheck
 ```
 
+Si `node` no aparece, la causa más habitual en Windows es que Node se instaló en una ruta distinta o que no se está ejecutando desde la carpeta correcta.
+
 ## API
 
-En una terminal:
+En una terminal de PowerShell, desde la raíz del repositorio:
 
 ```powershell
+Set-Location "D:\02-PERSONAL\01-PROJECTS\37-iaarchitecture"
+$env:Path = "D:\00-PROGRAMAS\nodejs;" + $env:Path
 pnpm start:api
 ```
 
+El script equivalente directo también funciona:
+
+```powershell
+node scripts/start-api.mjs
+```
+
 La API queda en `http://127.0.0.1:3000` y persiste en `.architecture-ai/architecture-ai.sqlite`.
+
+Si el puerto `3000` ya está ocupado, use un puerto alternativo:
+
+```powershell
+$env:ARCHITECTURE_AI_PORT = "3001"
+pnpm start:api
+```
 
 Endpoints: `POST /analyses`, `GET /analyses`, `GET /analyses/:id`, `GET /packages/:id`, `POST /packages/:id/generate`, `GET /packages/:id/traceability`, `GET /packages/:id/decisions`, `POST /decisions/:id/{review|approve|reject|request-changes}` y `GET /decisions/:id/audit`.
 

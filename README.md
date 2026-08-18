@@ -1,13 +1,13 @@
 # Architecture AI MVP
 
-Architecture AI convierte un PRD o historias de usuario en un Architecture Package trazable y restringido por evidencia. `knowledge/` y `ontology/` son el System of Record; SQLite solo guarda el estado operativo.
+Architecture AI convierte un PRD o historias de usuario en un Architecture Package trazable y restringido por evidencia. `knowledge/` y `ontology/` son el System of Record; SQLite solo guarda el estado y metadatos del análisis en la etapa MVP.
 
 ## Requisitos e instalación
 
 - Node.js 22+
 - pnpm 9+
 
-En PowerShell, asegúrese de situarse en la raíz del repositorio y de que Node esté disponible en `PATH`:
+En PowerShell, asegúrate de situarte en la raíz del repositorio y de que Node esté disponible en `PATH`:
 
 ```powershell
 Set-Location "D:\02-PERSONAL\01-PROJECTS\37-iaarchitecture"
@@ -39,16 +39,16 @@ node scripts/start-api.mjs
 
 La API queda en `http://127.0.0.1:3000` y persiste en `.architecture-ai/architecture-ai.sqlite`.
 
-Si el puerto `3000` ya está ocupado, use un puerto alternativo:
+Si el puerto `3000` ya está ocupado, usa un puerto alternativo:
 
 ```powershell
 $env:ARCHITECTURE_AI_PORT = "3001"
 pnpm start:api
 ```
 
-Endpoints: `POST /analyses`, `GET /analyses`, `GET /analyses/:id`, `GET /packages/:id`, `POST /packages/:id/generate`, `GET /packages/:id/traceability`, `GET /packages/:id/decisions`, `POST /decisions/:id/{review|approve|reject|request-changes}` y `GET /decisions/:id/audit`.
+Endpoints: `POST /analyses`, `GET /analyses`, `GET /analyses/:id`, `GET /packages/:id`, `POST /packages/:id/generate`, `GET /packages/:id/traceability`, `GET /packages/:id/decisions`, `POST /decisions`.
 
-Flujo de historial: cree un análisis con `POST /analyses`, consulte los resúmenes persistidos con `GET /analyses` y seleccione uno con `GET /packages/:id`. Esta última consulta es de solo lectura del resultado almacenado: devuelve la misma revisión, decisiones y trazabilidad después de reiniciar la aplicación contra la misma base SQLite, y no modifica los archivos ya generados. Para crear o regenerar los archivos del paquete use explícitamente `POST /packages/:id/generate`; si el análisis aún no tiene resultado, `GET /packages/:id` responde `409` con el código `PACKAGE_NOT_READY`.
+Flujo de historial: crea un análisis con `POST /analyses`, consulta los resúmenes persistidos con `GET /analyses` y selecciona uno con `GET /packages/:id`. Esta última consulta es de solo lectura y devuelve el Architecture Package generado.
 
 Por ejemplo, la generación explícita por API es:
 
@@ -77,7 +77,7 @@ node apps/cli/dist/main.js review DEC-1 --action approve
 node apps/cli/dist/main.js audit DEC-1
 ```
 
-La CLI usa exactamente la misma API que la web. Use `ARCHITECTURE_AI_API_URL` para cambiar la URL (también se acepta `ARCHITECTURE_AI_API`).
+La CLI usa exactamente la misma API que la web. Usa `ARCHITECTURE_AI_API_URL` para cambiar la URL (también se acepta `ARCHITECTURE_AI_API`).
 
 ## Aplicación web
 
@@ -87,7 +87,7 @@ Con la API ejecutándose en otra terminal:
 pnpm --filter @architecture-ai/web dev
 ```
 
-Abra la URL indicada por Vite, normalmente `http://localhost:5173`. La interfaz permite enviar requisitos, generar el Architecture Package, revisar decisiones, consultar auditoría y navegar la trazabilidad.
+Abre la URL indicada por Vite, normalmente `http://localhost:5173`. La interfaz permite enviar requisitos, generar el Architecture Package, revisar decisiones, consultar auditoría y navegar la trazabilidad.
 
 Para generar el bundle:
 
@@ -112,5 +112,77 @@ Al crear o modificar conocimiento:
 - **Metadatos OKF**: Los archivos de conocimiento deben tener frontmatter OKF válido; si es inválido, el sistema rechaza su uso con `INVALID_OKF_METADATA`.
 - **Propuestas Estándar**: Las nuevas guías y estándares se proponen y evalúan bajo `PENDING_REVIEW` u otro estado según el nivel.
 - **Publicación Aislada**: La publicación exitosa (`POST /packages/:id/publish`) ocurre en una rama Git o worktree aislados y no modifica la rama activa por defecto.
-- **Aislamiento de Revisiones**: Un nuevo documento o estándar publicado no se recuperará automáticamente con `HEAD` hasta que su revisión Git específica se seleccione explícitamente o se integre (merge) en la rama principal.
+- **Aislamiento de Revisiones**: Un nuevo documento o estándar publicado no se recuperará automáticamente con `HEAD` hasta que su revisión Git específica se seleccione explícitamente o se indique.
 - **Publicación sin Aprobación**: Intentar publicar antes de la aprobación (`publish-before-approval`) está estrictamente prohibido por la API y bloqueará la transición.
+
+---
+
+## Reindexing, Ollama y Embeddings (configuración rápida)
+
+Esta sección describe cómo configurar y ejecutar la reindexación de `knowledge/` para generar embeddings usando tu instancia Ollama on‑prem y persistirlos en SQLite (MVP).
+
+Requisitos adicionales
+
+- Instala dependencias nativas usadas por los scripts:
+
+```bash
+pnpm add -D better-sqlite3
+# si tu Node no tiene fetch global, instala node-fetch
+pnpm add -D node-fetch
+```
+
+Variables de entorno recomendadas
+
+- OLLAMA_URL — URL de tu instancia Ollama (por ejemplo: http://127.0.0.1:11434)
+- OLLAMA_API_KEY — (opcional) API key para Ollama si aplica
+- OPENAI_API_KEY — (opcional) clave para OpenAI (placeholders posible)
+- CLAUDE_API_KEY — (opcional)
+- GEMINI_API_KEY — (opcional)
+- SQLITE_PATH — ruta al fichero SQLite (por defecto: .architecture-ai/architecture-ai.sqlite)
+- EMBEDDING_MODEL — identificador del modelo de embeddings local (por defecto: local-embed)
+- GENERATION_MODEL — identificador de modelo de generación (por defecto: local-gen)
+
+Aplicar migración SQLite (local)
+
+Asegúrate de tener sqlite3 CLI instalado. Ejecuta:
+
+```bash
+mkdir -p .architecture-ai
+sqlite3 .architecture-ai/architecture-ai.sqlite < scripts/migrations/001_init.sql
+```
+
+Reindexar knowledge usando el script
+
+```bash
+export OLLAMA_URL=http://127.0.0.1:11434
+export SQLITE_PATH=.architecture-ai/architecture-ai.sqlite
+export EMBEDDING_MODEL=local-embed
+node scripts/ingest_embeddings.mjs --knowledge-path ./knowledge --revision HEAD
+```
+
+Opciones del script
+
+- --knowledge-path PATH (por defecto ./knowledge)
+- --revision REV (por defecto HEAD)
+- --batch-size N (por defecto 8)
+- --force — recalcula embeddings aunque la misma file+revision ya exista
+
+Notas importantes
+
+- Idempotencia: el script evita reindexar la misma combinación file/revision si ya existe una entrada, a menos que uses --force.
+- Sensibilidad: archivos con frontmatter `sensitivity: true` o `sensitive: true` se omiten por defecto.
+- Embeddings: se guardan como JSON en la tabla `embeddings` de SQLite (columna embedding_json). Esta es una solución de prototipo; para producción considera migrar a Postgres+pgvector o Qdrant.
+- Endpoints Ollama: el script llama a `${OLLAMA_URL}/embed`. Ajusta el endpoint si tu versión de Ollama usa otro contrato.
+
+Usar la CLI (opcional)
+
+El repositorio incluye un comando CLI `reindex` que invoca el script de ingest:
+
+```bash
+pnpm --filter @architecture-ai/cli build
+architecture-ai reindex --knowledge-path ./knowledge --revision HEAD
+```
+
+¿Problemas?
+
+Si tienes problemas con better-sqlite3 en tu sistema, puedes adaptar el script para usar el paquete `sqlite3` en su lugar o ejecutar la ingest desde un contenedor Linux.

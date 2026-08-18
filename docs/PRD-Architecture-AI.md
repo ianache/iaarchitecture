@@ -78,54 +78,7 @@ Fase siguiente (recomendado)
 
 ## Arquitectura propuesta (alto nivel)
 
-Componentes principales:
-- API / Backend (Node.js): endpoints existentes ampliados y nuevos servicios.
-  - services/model-adapter: interfaz para Ollama y modelos públicos (generate / embed / healthcheck).
-  - services/vector-store: gestión local de embeddings (SQLite + embedded vector storage simple; esquema preparado para migración).
-  - workers: cola para reindex y generación pesada.
-- Storage:
-  - SQLite: metadata, tables de reviews, variants, evidence_citation, models_config.
-  - Filesystem: knowledge/ y ontology/ repos con frontmatter OKF.
-- Web UI / CLI: interfaces para enviar requisitos, revisar decisiones, visualizar evidencia y exportar diagramas.
-
-Esquema de tablas recomendadas (SQLite, MVP):
-
-- models_config
-  - id TEXT PRIMARY KEY
-  - name TEXT
-  - type TEXT
-  - endpoint TEXT
-  - on_prem INTEGER
-  - allowed_sensitive INTEGER
-
-- evidence_citation
-  - id TEXT PRIMARY KEY
-  - package_id TEXT
-  - file_path TEXT
-  - commit_sha TEXT
-  - start_line INTEGER
-  - end_line INTEGER
-  - snippet TEXT
-  - score REAL
-
-- variant
-  - id TEXT PRIMARY KEY
-  - package_id TEXT
-  - title TEXT
-  - pros_cons_json TEXT
-  - metrics_json TEXT
-  - created_by TEXT
-  - created_at TEXT
-
-- reviews
-  - id TEXT PRIMARY KEY
-  - target_id TEXT
-  - reviewer TEXT
-  - state TEXT
-  - comments TEXT
-  - created_at TEXT
-
-Nota: estos esquemas son orientativos y deben implementarse como migrations SQL en el siguiente paso.
+La arquitectura completa (contexto, contenedores, componentes y esquema de persistencia) está documentada con el estándar C4 en [docs/solucion/arquitectura-c4.md](solucion/arquitectura-c4.md). En resumen: una API Fastify orquesta el análisis (`ArchitectureOrchestrator`) sobre evidencia recuperada de `knowledge/`+`ontology/` (Git), usa `ModelAdapter` para enrutar a Ollama on-prem o modelos públicos, y persiste el estado operativo (análisis, decisiones, revisiones, auditoría) en SQLite; Web UI y CLI consumen esa API vía REST.
 
 ## Backlog inicial (por prioridad)
 
